@@ -20,6 +20,11 @@ h1{font-size:22px;margin:0 0 4px}
 #drop b{color:var(--blue)}
 #drop small{display:block;color:var(--sub);margin-top:6px}
 details summary{cursor:pointer;font-weight:700}
+#kwBox summary{list-style:none;display:flex;align-items:center;gap:8px}
+#kwBox summary::-webkit-details-marker{display:none}
+#kwBox summary .kwt{flex:1}
+#kwBox summary .kwt small{font-weight:400;color:var(--sub);font-size:12.5px}
+#kwToggle{font-weight:400;padding:5px 10px;font-size:13px}
 .kw{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
 .kw label{font-weight:500;font-size:13px;display:block;margin-bottom:4px}
 .kw label span{color:var(--sub);font-weight:400}
@@ -134,8 +139,8 @@ tr.dup mark{background:#f3f0e0}
   </div>
 
   <div class="card">
-    <details>
-      <summary>선별 키워드 설정 (쉼표나 줄바꿈으로 구분, 이 브라우저에 저장됨)</summary>
+    <details id="kwBox" open>
+      <summary><span class="kwt">선별 키워드 설정 <small>(쉼표나 줄바꿈으로 구분, 이 브라우저에 저장됨)</small></span><button type="button" id="kwToggle">닫기 ✕</button></summary>
       <div class="kw">
         <div><label>① 추천 키워드 <span>— 걸리면 기본 선택</span></label><textarea id="kwCore"></textarea></div>
         <div><label>② 검토 키워드 <span>— 정책연구류, 기본 미선택</span></label><textarea id="kwRes"></textarea></div>
@@ -436,6 +441,9 @@ $('file').onchange = e => { if (e.target.files.length) handleFiles([...e.target.
 ['dragleave','drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
 drop.addEventListener('drop', e => e.dataTransfer.files.length && handleFiles([...e.dataTransfer.files]));
 $('allXlsx').onclick = downloadAll;
+// 키워드 설정: 열 때마다 기본으로 펼침, 오른쪽 위 버튼으로 접기/펼치기
+$('kwToggle').onclick = e => { e.preventDefault(); $('kwBox').open = !$('kwBox').open; };
+$('kwBox').addEventListener('toggle', () => { $('kwToggle').textContent = $('kwBox').open ? '닫기 ✕' : '열기 ▾'; });
 $('textClose').onclick = () => { $('textBox').classList.add('hidden'); $('textClose').classList.add('hidden'); $('allMsg').textContent = ''; };
 new MutationObserver(() => $('textClose').classList.toggle('hidden', $('textBox').classList.contains('hidden')))
   .observe($('textBox'), {attributes: true, attributeFilter: ['class']});
