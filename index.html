@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>나라장터 발주계획·사전규격_용역 선별기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{color-scheme:light;--bg:#f6f7f9;--card:#fff;--ink:#1d2433;--sub:#667085;--line:#e4e7ec;--blue:#2f5bea;--blue-soft:#eef2ff;--green:#11845b;--green-soft:#e8f6ef;--amber:#a15c00;--amber-soft:#fff4e0;--red:#b42318;--red-soft:#fdecea}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+h1{font-size:22px;margin:0 0 4px}
+.lead{color:var(--sub);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+#drop{border:2px dashed #b8c2d6;border-radius:12px;padding:34px;text-align:center;cursor:pointer;background:#fbfcfe;transition:.15s}
+#drop.over{border-color:var(--blue);background:var(--blue-soft)}
+#drop b{color:var(--blue)}
+#drop small{display:block;color:var(--sub);margin-top:6px}
+details summary{cursor:pointer;font-weight:700}
+.kw{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.kw label{font-weight:500;font-size:13px;display:block;margin-bottom:4px}
+.kw label span{color:var(--sub);font-weight:400}
+textarea{color:var(--ink);background:#fff;width:100%;min-height:120px;border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:13px;resize:vertical}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button{font:inherit;color:var(--ink);border:1px solid #cfd5df;background:#fff;border-radius:8px;padding:8px 14px;cursor:pointer}
+button.green{background:var(--green);border-color:var(--green);color:#fff;font-weight:500}
+button.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:500}
+button:disabled{opacity:.45;cursor:default}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.stat{flex:1;min-width:130px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+.stat .n{font-size:22px;font-weight:700}
+.stat .l{color:var(--sub);font-size:12px}
+.tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.tab{border-radius:999px;padding:6px 14px}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.hint{color:var(--sub);font-size:12.5px;margin:0 0 10px}
+table{width:100%;border-collapse:collapse;background:#fff}
+th,td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--sub);font-weight:500;background:#fafbfc;position:sticky;top:0}
+td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+td.nw{white-space:nowrap}
+mark{background:#fff1a8;padding:0 1px;border-radius:2px}
+.tag{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:999px;margin:1px 2px 1px 0;white-space:nowrap}
+.t-core{background:var(--green-soft);color:var(--green)}
+.t-res{background:var(--amber-soft);color:var(--amber)}
+.t-dup{background:#f1eaff;color:#6a2fd6}
+tr.dup td{color:#98a2b3;background:#fbf9ff}
+tr.dup mark{background:#f3f0e0}
+.t-bl{background:var(--red-soft);color:var(--red)}
+.foot{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:12px 0 0;margin-top:12px}
+#msg{color:var(--sub);font-size:13px}
+.hidden{display:none}
+.sechead{display:flex;align-items:baseline;gap:10px;margin:0 0 12px}
+.sechead h2{font-size:18px;margin:0}
+.sechead .file{color:var(--sub);font-size:12.5px}
+.sechead .x{margin-left:auto;padding:4px 10px;font-size:12.5px}
+.badge{font-size:12px;font-weight:700;padding:3px 9px;border-radius:6px;color:#fff}
+.b-사전규격공개{background:#7a3ff2}.b-발주계획{background:var(--blue)}
+.empty{color:var(--sub);text-align:center;padding:18px;border:1px dashed var(--line);border-radius:12px;background:#fff;margin-bottom:16px}
+.tablebox{max-height:62vh;overflow:auto;border:1px solid var(--line);border-radius:8px}
+@media(max-width:760px){.kw{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>나라장터 발주계획·사전규격_용역 선별기</h1>
+  <p class="lead">나라장터 발주계획·사전규격공개(일반용역)에서 수의계약을 빼고 조사·연구성 용역만 골라 보여줍니다. 매일 아침 8:30, 오후 5:00에 나라장터 API로 자동 수집돼요.</p>
+
+  <div class="card" id="autoCard">
+    <div class="row" style="justify-content:space-between">
+      <div><b id="autoTitle">자동 수집 데이터를 불러오는 중…</b><div id="autoSub" class="hint" style="margin:4px 0 0"></div></div>
+      <div class="row">
+        <button id="autoReload" class="hidden">자동 수집 결과로 되돌리기</button>
+        <button id="fireNow" class="primary hidden" title="저장소 주인만 실행할 수 있어요">🔄 지금 새로 수집</button>
+      </div>
+    </div>
+    <div id="fireMsg" class="hint hidden" style="margin:10px 0 0"></div>
+  </div>
+
+  <div class="card">
+    <div id="drop" style="padding:20px">
+      <b>직접 받은 엑셀로 보려면: 발주계획 · 사전규격공개 엑셀을 끌어다 놓거나 클릭</b>
+      <small>나라장터 › 발주 › 발주목록 › 발주계획 / 사전규격공개 › 엑셀다운로드 한 .xlsx 그대로 · 두 파일 한꺼번에 올려도 돼요</small>
+      <input id="file" type="file" accept=".xlsx,.xls" multiple class="hidden">
+    </div>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>선별 키워드 설정 (쉼표나 줄바꿈으로 구분, 이 브라우저에 저장됨)</summary>
+      <div class="kw">
+        <div><label>① 추천 키워드 <span>— 걸리면 기본 선택</span></label><textarea id="kwCore"></textarea></div>
+        <div><label>② 검토 키워드 <span>— 정책연구류, 기본 미선택</span></label><textarea id="kwRes"></textarea></div>
+        <div><label>③ 제외 키워드 <span>— 위에 걸려도 빼냄</span></label><textarea id="kwBl"></textarea></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="apply">키워드 적용</button>
+        <button id="reset">기본값으로 되돌리기</button>
+      </div>
+    </details>
+  </div>
+
+  <div id="allbar" class="card hidden">
+    <div class="row">
+      <b style="margin-right:6px">전체 내보내기</b>
+      <button class="primary" id="allXlsx">엑셀 다운로드 (사전규격·발주계획 시트 따로)</button>
+      <button class="green" id="allText">표 형태로 복사 (메신저·메일용)</button>
+      <span id="allMsg" style="color:var(--sub);font-size:13px"></span>
+    </div>
+    <div id="textBox" class="hidden" style="margin-top:12px">
+      <p class="hint" id="textHint" style="margin-bottom:6px"></p>
+      <textarea id="textOut" readonly style="min-height:220px;font-size:13px"></textarea>
+      <div id="richOut" contenteditable="true" spellcheck="false" style="color:#1d2433;border:1px solid var(--line);border-radius:8px;padding:12px;max-height:420px;overflow:auto;background:#fff"></div>
+    </div>
+  </div>
+  <div id="results"></div>
+</div>
+
+<script>
+const DEFAULTS = {
+  core: '여론, 인식, 설문, 통계, 성과분석, 성과, 만족도, 체감도, 청렴도, 조사, 연구조사, 실태, 실태조사, 서베이',
+  res: '연구',
+  bl: '태블릿, 주민역량, 지역역량, 개조사업, CCTV, 사전영향, 영향조사, 건강영향, 지하안전, 지장물, 수밀, 측량, 지반, 지질, 실시설계, 기본설계, 감리, 학술조사, 발굴, 행사, 공유회, 교류회, 청소, 환경미화, 시설관리, 사옥관리, 경비, 유지보수, 유지관리, 홈페이지, 시스템, 통신사업자, 임차, 폐기물, 수질, 배출량, 배출모형, 인벤토리, 실증, 시험, 기술개발, 코호트, 내성, 단백체, 유전자, 백신, 독성, 마이크로바이옴, 기능성, 특허, 지침서'
+};
+const LS = 'g2b-filter-kw-v1';
+const $ = id => document.getElementById(id);
+const split = s => s.split(/[,\n，]/).map(x => x.trim()).filter(Boolean);
+
+function loadKw(){
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(LS) || 'null'); } catch(e) {}
+  const k = saved || DEFAULTS;
+  $('kwCore').value = k.core; $('kwRes').value = k.res; $('kwBl').value = k.bl;
+}
+function saveKw(){
+  try { localStorage.setItem(LS, JSON.stringify({core:$('kwCore').value,res:$('kwRes').value,bl:$('kwBl').value})); } catch(e) {}
+}
+
+// ---- 핵심 로직 ----
+function parseSheet(aoa){
+  const h = aoa.findIndex(r => String(r[0]).trim() === 'No');
+  if (h < 0) throw new Error('헤더 행(No, 업무구분, …)을 찾지 못했어요. 나라장터 발주계획 엑셀이 맞는지 확인해 주세요.');
+  const headers = aoa[h].map(x => String(x));
+  const norm = headers.map(x => x.replace(/\s+/g, ''));
+  const col = n => norm.indexOf(n);
+  const when = col('발주시기') >= 0 ? col('발주시기') : col('진행일자');
+  const idx = {name: col('사업명'), contract: col('계약방법'), org: col('수요기관'), when, whenLabel: when >= 0 ? norm[when] : '', status: col('진행상태'), budget: col('예산금액'), no: col('No')};
+  if (idx.name < 0) throw new Error('사업명 열을 찾지 못했어요.');
+  const rows = aoa.slice(h + 1).filter(r => String(r[idx.name] || '').trim() !== '');
+  let created = '', kind = '';
+  for (let i = 0; i < h; i++) {
+    const s = String(aoa[i][0]);
+    const m = s.match(/생성일\s*:\s*(\d{4})\/(\d{2})\/(\d{2})/); if (m) created = m[1]+m[2]+m[3];
+    const k = s.match(/^발주목록_(.+)$/); if (k) kind = k[1].trim();
+  }
+  return {headers, idx, rows, created, kind: kind || '발주목록'};
+}
+function classify(parsed, kw){
+  const {idx, rows} = parsed;
+  const out = [];
+  let sole = 0;
+  rows.forEach((r, i) => {
+    const contract = idx.contract >= 0 ? String(r[idx.contract] || '') : '';
+    if (contract.includes('수의')) { sole++; return; }
+    const name = String(r[idx.name]);
+    const core = kw.core.filter(k => name.includes(k));
+    const res = kw.res.filter(k => name.includes(k));
+    const bl = kw.bl.filter(k => name.includes(k));
+    if (!core.length && !res.length) return;
+    const cls = bl.length ? 'bl' : core.length ? 'core' : 'res';
+    out.push({i, r, cls, core, res, bl});
+  });
+  return {items: out, sole, total: rows.length};
+}
+// ---------------------
+
+const ORDER = ['사전규격공개', '발주계획'];
+const sets = {};   // kind -> {parsed, result, checked, tab, fileTag, fileName, msg}
+
+function currentKw(){ return {core: split($('kwCore').value), res: split($('kwRes').value), bl: split($('kwBl').value)}; }
+// 사전규격 중복: 수요기관+사업명(띄어쓰기·괄호·기호 무시) 같으면 '중복' → 기본 해제
+//               수요기관 같고 사업명이 서로 포함되거나, 사업명만 같으면 '중복 의심' → 표시만
+const nk = s => String(s ?? '').replace(/[\s\[\]\(\)「」｢｣<>《》'"‘’“”·‧ㆍ・,._\-~:]/g, '').toLowerCase();
+function markDups(S){
+  const P = sets['사전규격공개'];
+  S.result.items.forEach(x => x.dup = null);
+  if (S.parsed.kind !== '발주계획' || !P) return;
+  const pi = P.parsed.idx;
+  const pre = P.parsed.rows.map(r => ({o: nk(r[pi.org]), m: nk(r[pi.name])}));
+  const ix = S.parsed.idx;
+  S.result.items.forEach(x => {
+    const o = nk(x.r[ix.org]), m = nk(x.r[ix.name]);
+    if (pre.some(p => p.m === m && p.o === o)) x.dup = 'same';
+    else if (pre.some(p => p.m === m || (p.o === o && m.length > 5 && p.m.length > 5 && (p.m.includes(m) || m.includes(p.m))))) x.dup = 'maybe';
+  });
+}
+function runSet(S){
+  S.result = classify(S.parsed, currentKw());
+  markDups(S);
+  S.checked = new Set(S.result.items.filter(x => x.cls === 'core' && x.dup !== 'same').map(x => x.i));
+}
+function runAll(){ Object.values(sets).forEach(runSet); renderAll(); }
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function highlight(name, words){
+  const ws = [...new Set(words)].sort((a,b) => b.length - a.length);
+  if (!ws.length) return esc(name);
+  const re = new RegExp('(' + ws.map(w => w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|') + ')', 'g');
+  return name.split(re).map((p, j) => j % 2 ? '<mark>' + esc(p) + '</mark>' : esc(p)).join('');
+}
+const HINT = {
+  core: '조사·설문·실태·성과 등이 들어간 건. 기본으로 모두 선택돼 있어요. 아니다 싶은 건 체크 해제.',
+  res: "'연구'만 들어간 정책연구·기획연구. 리서치·컨설팅사가 할 만한 건만 골라 체크하세요.",
+  bl: '키워드엔 걸렸지만 환경·공학·행사·시설관리 등으로 판단해 뺀 건. 잘못 빠진 게 있으면 체크하면 포함돼요.',
+  sel: '다운로드될 목록이에요.'
+};
+const listOf = S => S.tab === 'sel' ? S.result.items.filter(x => S.checked.has(x.i)) : S.result.items.filter(x => x.cls === S.tab);
+
+function sectionHTML(kind, S){
+  const by = c => S.result.items.filter(x => x.cls === c);
+  const ix = S.parsed.idx;
+  const stats = [[S.result.total, '전체 ' + kind], ...(ix.contract >= 0 ? [[S.result.sole, '수의계약 제외']] : []),
+    [by('core').length, '① 추천'], [by('res').length, '② 검토(연구)'], [by('bl').length, '③ 제외 키워드로 걸러짐'],
+    ...(kind === '발주계획' && sets['사전규격공개'] ? [[S.result.items.filter(x => x.dup === 'same' && x.cls !== 'bl').length, '사전규격과 중복 (선택 해제됨)']] : [])];
+  const tabs = [['core','① 추천'],['res','② 검토(연구)'],['bl','③ 걸러진 건'],['sel','✓ 선택됨']];
+  const list = listOf(S);
+  const cell = (r, k) => k >= 0 ? esc(r[k] ?? '') : '';
+  return `<div class="card" data-kind="${esc(kind)}">
+    <div class="sechead"><span class="badge b-${esc(kind)}">${esc(kind)}</span><h2>선별 결과</h2><span class="file">${esc(S.fileName)}${S.parsed.created ? ' · 생성일 ' + S.parsed.created : ''}</span><button class="x" data-act="remove">닫기</button></div>
+    <div class="stats">${stats.map(([n,l]) => `<div class="stat"><div class="n">${n.toLocaleString()}</div><div class="l">${l}</div></div>`).join('')}</div>
+    <div class="tabs">${tabs.map(([k,l]) => `<button class="tab ${S.tab===k?'on':''}" data-t="${k}">${l} ${k==='sel'?S.checked.size:by(k).length}</button>`).join('')}</div>
+    <p class="hint">${HINT[S.tab]}${kind === '발주계획' && sets['사전규격공개'] ? ' 보라색 「사전규격 중복」은 사전규격에 이미 올라온 건이라 선택을 풀어뒀어요(필요하면 다시 체크). 「중복 의심」은 이름이 비슷한 건으로, 선택은 그대로 두니 확인해 보세요.' : ''}</p>
+    <div class="tablebox"><table>
+      <thead><tr><th><input type="checkbox" data-act="all" ${list.length && list.every(x => S.checked.has(x.i)) ? 'checked' : ''}></th><th>No</th><th>사업명</th><th>수요기관</th><th>${ix.contract >= 0 ? '계약방법' : '진행상태'}</th><th>${esc(ix.whenLabel || '일자')}</th><th style="text-align:right">예산금액</th><th>걸린 키워드</th></tr></thead>
+      <tbody>${list.length ? list.map(x => `<tr class="${x.dup === 'same' ? 'dup' : ''}">
+        <td><input type="checkbox" data-i="${x.i}" ${S.checked.has(x.i)?'checked':''}></td>
+        <td class="nw">${cell(x.r, ix.no)}</td>
+        <td>${highlight(String(x.r[ix.name]), [...x.core, ...x.res, ...x.bl])}</td>
+        <td>${cell(x.r, ix.org)}</td>
+        <td class="nw">${cell(x.r, ix.contract >= 0 ? ix.contract : ix.status)}</td>
+        <td class="nw">${cell(x.r, ix.when)}</td>
+        <td class="num">${cell(x.r, ix.budget)}</td>
+        <td>${x.dup === 'same' ? '<span class="tag t-dup">사전규격 중복</span>' : x.dup === 'maybe' ? '<span class="tag t-dup">중복 의심</span>' : ''}${x.bl.map(k=>`<span class="tag t-bl">${esc(k)}</span>`).join('')}${x.core.map(k=>`<span class="tag t-core">${esc(k)}</span>`).join('')}${x.res.map(k=>`<span class="tag t-res">${esc(k)}</span>`).join('')}</td>
+      </tr>`).join('') : `<tr><td colspan="8" style="text-align:center;color:var(--sub);padding:24px">해당 건이 없어요</td></tr>`}</tbody>
+    </table></div>
+    <div class="foot row">
+      <button class="primary" data-act="dl" ${S.checked.size ? '' : 'disabled'}>선택한 ${S.checked.size}건 엑셀 다운로드</button>
+      <button class="green" data-act="text" ${S.checked.size ? '' : 'disabled'}>표 형태로 복사 (메신저·메일용)</button>
+      <span class="msg" style="color:var(--sub);font-size:13px">${esc(S.msg || '')}</span>
+    </div>
+  </div>`;
+}
+function renderAll(){
+  const kinds = [...ORDER.filter(k => sets[k]), ...Object.keys(sets).filter(k => !ORDER.includes(k))];
+  const missing = ORDER.filter(k => !sets[k]);
+  const scroll = {};
+  document.querySelectorAll('#results [data-kind]').forEach(c => { scroll[c.dataset.kind] = c.querySelector('.tablebox')?.scrollTop || 0; });
+  requestAnimationFrame(() => document.querySelectorAll('#results [data-kind]').forEach(c => { const tb = c.querySelector('.tablebox'); if (tb && scroll[c.dataset.kind]) tb.scrollTop = scroll[c.dataset.kind]; }));
+  $('allbar').classList.toggle('hidden', !Object.keys(sets).length);
+  $('results').innerHTML = kinds.map(k => sectionHTML(k, sets[k])).join('') +
+    (kinds.length && missing.length ? `<div class="empty">${missing.join(' · ')} 파일도 올리면 여기에 따로 나와요.</div>` : '') +
+    (errMsg ? `<div class="empty" style="color:var(--red)">⚠ ${esc(errMsg)}</div>` : '');
+}
+let errMsg = '';
+
+const selectedRows = S => S.result.items.filter(x => S.checked.has(x.i)).sort((a,b) => a.i - b.i).map(x => x.r);
+
+async function handleFiles(files){
+  errMsg = '';
+  for (const f of files) {
+    try {
+      const wb = XLSX.read(await f.arrayBuffer(), {type:'array'});
+      const aoa = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, raw:false, defval:''});
+      const parsed = parseSheet(aoa);
+      const S = {parsed, tab:'core', fileName: f.name, msg:'', fileTag: parsed.created || new Date().toISOString().slice(0,10).replace(/-/g,'')};
+      runSet(S);
+      sets[parsed.kind] = S;
+    } catch(e) { errMsg = f.name + ': ' + (e.message || e); }
+  }
+  if (sets['발주계획'] && sets['사전규격공개']) runSet(sets['발주계획']);
+  renderAll();
+}
+
+function saveFile(name, data){
+  const url = URL.createObjectURL(new Blob([data], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+  const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+async function download(S){
+  const rows = selectedRows(S);
+  const ws = XLSX.utils.aoa_to_sheet([S.parsed.headers, ...rows]);
+  ws['!cols'] = S.parsed.headers.map((h, k) => ({wch: k === S.parsed.idx.name ? 60 : k === S.parsed.idx.org ? 30 : 12}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '선별결과');
+  const data = XLSX.write(wb, {type:'array', bookType:'xlsx'});
+  try {
+    saveFile(`${S.parsed.kind}_선별_${S.fileTag}.xlsx`, data);
+    S.msg = `${rows.length}건 저장했어요.`;
+  } catch(e) {
+    S.msg = e && e.code === 'declined' ? '다운로드를 취소했어요.' : '이 화면에선 다운로드가 안 돼요. "표 형태로 복사"를 써 주세요.';
+  }
+  renderAll();
+}
+// 클립보드: 막히면 텍스트 상자에 띄워서 직접 Ctrl+C
+async function toClipboard(text, label){
+  $('textOut').value = text; $('textOut').classList.remove('hidden'); $('richOut').classList.add('hidden');
+  $('textBox').classList.remove('hidden');
+  try {
+    await navigator.clipboard.writeText(text);
+    $('textHint').textContent = `✓ ${label} 복사했어요. 아래 내용 그대로 붙여넣으면 돼요.`;
+    return true;
+  } catch(e) {
+    $('textOut').focus(); $('textOut').select();
+    $('textHint').textContent = `자동 복사가 막혔어요. 아래 상자가 전체 선택돼 있으니 Ctrl+C(맥은 ⌘+C) 하세요.`;
+    return false;
+  }
+}
+const kindsInOrder = () => [...ORDER.filter(k => sets[k]), ...Object.keys(sets).filter(k => !ORDER.includes(k))];
+async function copy(S){
+  const clean = v => String(v ?? '').replace(/[\t\r\n]+/g, ' ').trim();
+  const H = S.parsed.headers;
+  const tsv = [H, ...selectedRows(S)].map(r => H.map((_, k) => clean(r[k])).join('\t')).join('\n');
+  await toClipboard(tsv, `${S.parsed.kind} 표(엑셀용)를`);
+  $('allbar').scrollIntoView({behavior:'smooth', block:'start'});
+}
+// 메신저 붙여넣기용 표: 사전규격 → 사업명|수요기관, 발주계획 → 발주시기|사업명|수요기관
+function tableOf(kind){
+  const S = sets[kind], ix = S.parsed.idx;
+  const v = (r, i) => i >= 0 ? String(r[i] ?? '').replace(/\s+/g, ' ').trim() : '';
+  const cols = [...(ix.contract >= 0 && ix.when >= 0 ? [[ix.whenLabel, ix.when]] : []), ['사업명', ix.name], ['수요기관', ix.org]];
+  return {title: kind.replace('공개', ''), head: cols.map(c => c[0]), rows: selectedRows(S).map(r => cols.map(c => v(r, c[1])))};
+}
+function textOf(kinds){
+  const d = (sets[kinds[0]] || {}).fileTag || '';
+  const date = d ? `${+d.slice(4,6)}/${+d.slice(6,8)}` : '';
+  const tbls = kinds.map(tableOf);
+  const td = 'style="border:1px solid #999;padding:3px 8px;text-align:left"';
+  const html = `<div>${date}</div>` + tbls.map((t, n) =>
+    `${n ? '<br>' : ''}<div>${esc(t.title)}</div><br><table style="border-collapse:collapse"><tr>${t.head.map(h => `<td ${td}>${esc(h)}</td>`).join('')}</tr>` +
+    t.rows.map(r => `<tr>${r.map(c => `<td ${td}>${esc(c)}</td>`).join('')}</tr>`).join('') + `</table>`).join('');
+  const plain = [date, ...tbls.flatMap(t => [t.title, '', t.head.join('\t'), ...t.rows.map(r => r.join('\t')), ''])].join('\n').trim();
+  return {html, plain};
+}
+async function copyText(kinds){
+  kinds = kinds.filter(k => sets[k] && sets[k].checked.size);
+  if (!kinds.length) { $('allMsg').textContent = '선택된 건이 없어요.'; return; }
+  const {html, plain} = textOf(kinds);
+  $('textBox').classList.remove('hidden'); $('textOut').classList.add('hidden'); $('richOut').classList.remove('hidden');
+  $('richOut').innerHTML = html;
+  let ok = false;
+  try {
+    await navigator.clipboard.write([new ClipboardItem({'text/html': new Blob([html], {type:'text/html'}), 'text/plain': new Blob([plain], {type:'text/plain'})})]);
+    ok = true;
+  } catch(e) {
+    try { const sel = getSelection(), rg = document.createRange(); rg.selectNodeContents($('richOut')); sel.removeAllRanges(); sel.addRange(rg); ok = document.execCommand('copy'); } catch(e2) {}
+  }
+  $('textHint').textContent = ok ? '✓ 표 형태로 복사했어요. 메신저·메일에 붙여넣으면 표로 들어가요.'
+    : '자동 복사가 막혔어요. 아래 표가 선택돼 있으니 Ctrl+C(맥은 ⌘+C) 하세요.';
+  if (!ok) { const sel = getSelection(), rg = document.createRange(); rg.selectNodeContents($('richOut')); sel.removeAllRanges(); sel.addRange(rg); }
+  $('allbar').scrollIntoView({behavior:'smooth', block:'start'});
+}
+async function downloadAll(){
+  const kinds = kindsInOrder().filter(k => sets[k].checked.size);
+  if (!kinds.length) { $('allMsg').textContent = '선택된 건이 없어요.'; return; }
+  const wb = XLSX.utils.book_new();
+  kinds.forEach(k => {
+    const S = sets[k];
+    const ws = XLSX.utils.aoa_to_sheet([S.parsed.headers, ...selectedRows(S)]);
+    ws['!cols'] = S.parsed.headers.map((h, i) => ({wch: i === S.parsed.idx.name ? 60 : i === S.parsed.idx.org ? 30 : 12}));
+    XLSX.utils.book_append_sheet(wb, ws, k.slice(0, 31));
+  });
+  const data = XLSX.write(wb, {type:'array', bookType:'xlsx'});
+  try {
+    saveFile(`나라장터_선별_${sets[kinds[0]].fileTag}.xlsx`, data);
+    $('allMsg').textContent = kinds.map(k => `${k} ${sets[k].checked.size}건`).join(', ') + ' 저장했어요.';
+  } catch(e) {
+    $('allMsg').textContent = e && e.code === 'declined' ? '다운로드를 취소했어요.' : '이 화면에선 다운로드가 안 돼요. "표 형태로 복사"를 써 주세요.';
+  }
+}
+
+// events
+const drop = $('drop');
+drop.onclick = () => $('file').click();
+$('file').onchange = e => { if (e.target.files.length) handleFiles([...e.target.files]); e.target.value = ''; };
+['dragenter','dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => e.dataTransfer.files.length && handleFiles([...e.dataTransfer.files]));
+$('allXlsx').onclick = downloadAll;
+$('allText').onclick = () => copyText(kindsInOrder());
+$('apply').onclick = () => { saveKw(); runAll(); };
+$('reset').onclick = () => { try{localStorage.removeItem(LS);}catch(e){} $('kwCore').value=DEFAULTS.core; $('kwRes').value=DEFAULTS.res; $('kwBl').value=DEFAULTS.bl; runAll(); };
+
+const secOf = el => { const c = el.closest('[data-kind]'); return c ? sets[c.dataset.kind] : null; };
+$('results').addEventListener('click', e => {
+  const S = secOf(e.target); if (!S) return;
+  const t = e.target.closest('[data-t]'); if (t) { S.tab = t.dataset.t; const tb = t.closest('[data-kind]').querySelector('.tablebox'); if (tb) tb.scrollTop = 0; renderAll(); return; }
+  const a = e.target.closest('button[data-act]'); if (!a) return;
+  if (a.dataset.act === 'dl') download(S);
+  else if (a.dataset.act === 'copy') copy(S);
+  else if (a.dataset.act === 'text') copyText([S.parsed.kind]);
+  else if (a.dataset.act === 'remove') { const k = e.target.closest('[data-kind]').dataset.kind; delete sets[k]; if (k === '사전규격공개' && sets['발주계획']) runSet(sets['발주계획']); renderAll(); }
+});
+$('results').addEventListener('change', e => {
+  const S = secOf(e.target); if (!S) return;
+  if (e.target.dataset.act === 'all') listOf(S).forEach(x => e.target.checked ? S.checked.add(x.i) : S.checked.delete(x.i));
+  else if (e.target.dataset.i) { const i = +e.target.dataset.i; e.target.checked ? S.checked.add(i) : S.checked.delete(i); }
+  renderAll();
+});
+
+// ---- 자동 수집 데이터 (data/latest.json, 예약 작업이 갱신) ----
+let latest = null;
+function applyLatest(){
+  if (!latest) return;
+  latest.sets.forEach(s => {
+    const parsed = parseSheet(s.aoa);
+    const S = {parsed, tab:'core', fileName: `나라장터 API 자동 수집 · ${latest.generatedAt} 기준`, msg:'', fileTag: parsed.created, auto: true};
+    runSet(S); sets[parsed.kind] = S;
+  });
+  if (sets['발주계획'] && sets['사전규격공개']) runSet(sets['발주계획']);
+  renderAll();
+}
+function autoStatus(){
+  const manual = Object.values(sets).some(S => !S.auto);
+  $('autoReload').classList.toggle('hidden', !latest || !manual);
+}
+async function getLatest(){
+  const r = await fetch('data/latest.json?t=' + Date.now(), {cache:'no-store'});
+  if (!r.ok) throw 0;
+  return r.json();
+}
+function showLatestInfo(){
+    const g = latest.generatedAt, rg = latest.range.replace(/(\d{4})(\d{2})(\d{2})/g, (m,y,mo,d) => `${+mo}/${+d}`);
+    $('autoTitle').textContent = `🔄 ${g} 기준 자동 수집 결과`;
+    $('autoSub').textContent = `나라장터 API · 진행일자 ${rg} · 매일 8:30·17:00 자동 갱신(GitHub 사정으로 5~20분 늦을 수 있음). 공기업 자체조달 일부(약 5%)는 API에 안 잡혀서, 꼼꼼히 보려면 엑셀을 직접 올려도 돼요.`;
+}
+async function loadLatest(){
+  try {
+    latest = await getLatest();
+    showLatestInfo();
+    if (!Object.keys(sets).length) applyLatest();
+  } catch(e) {
+    $('autoTitle').textContent = '자동 수집 데이터가 아직 없어요';
+    $('autoSub').textContent = '아래에 엑셀을 올려서 쓰세요.';
+  }
+  autoStatus();
+}
+// ---- 수시 갱신 버튼: GitHub Actions 실행 화면을 엶 (저장소 주인만 실행 가능) ----
+let polling = null;
+const fireMsg = t => { $('fireMsg').textContent = t; $('fireMsg').classList.toggle('hidden', !t); };
+const ghRepo = (() => {   // https://<아이디>.github.io/<저장소>/ → <아이디>/<저장소>
+  const m = location.hostname.match(/^([^.]+)\.github\.io$/);
+  const p = location.pathname.split('/').filter(Boolean)[0];
+  return m && p ? `${m[1]}/${p}` : '';
+})();
+if (ghRepo) $('fireNow').classList.remove('hidden');
+function pollForNew(prevAt){
+  clearInterval(polling);
+  const t0 = Date.now();
+  polling = setInterval(async () => {
+    const mins = Math.floor((Date.now() - t0) / 60000);
+    try {
+      const j = await getLatest();
+      if (j.generatedAt !== prevAt) {
+        clearInterval(polling); latest = j; showLatestInfo();
+        if (!Object.values(sets).some(S => !S.auto)) { Object.keys(sets).forEach(k => delete sets[k]); applyLatest(); }
+        fireMsg(`✓ ${j.generatedAt} 기준 새 데이터로 바꿨어요.`); autoStatus(); return;
+      }
+    } catch(e) {}
+    if (Date.now() - t0 > 15 * 60000) {
+      clearInterval(polling);
+      fireMsg('아직 새 데이터가 안 보여요. GitHub Actions 화면에서 실행이 끝났는지(초록 체크) 확인하고, 끝났다면 1~2분 뒤 새로고침(F5) 해주세요.');
+    } else fireMsg(`새 데이터를 기다리는 중… 실행 후 보통 2~4분 걸려요 (${mins}분 경과). 끝나면 자동으로 바뀌어요.`);
+  }, 20000);
+}
+$('fireNow').onclick = () => {
+  window.open(`https://github.com/${ghRepo}/actions/workflows/update.yml`, '_blank');
+  fireMsg('열린 GitHub 화면에서 오른쪽 "Run workflow" → 초록 "Run workflow" 버튼을 눌러주세요. 이 페이지는 새 데이터가 올라오면 자동으로 바뀌어요.');
+  pollForNew(latest ? latest.generatedAt : '');
+};
+
+$('autoReload').onclick = () => { Object.keys(sets).forEach(k => delete sets[k]); applyLatest(); autoStatus(); };
+const _render = renderAll;
+renderAll = function(){ _render(); autoStatus(); };
+
+loadKw();
+loadLatest();
+</script>
+</body>
+</html>
