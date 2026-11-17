@@ -61,7 +61,48 @@ tr.dup mark{background:#f3f0e0}
 .b-사전규격공개{background:#7a3ff2}.b-발주계획{background:var(--blue)}
 .empty{color:var(--sub);text-align:center;padding:18px;border:1px dashed var(--line);border-radius:12px;background:#fff;margin-bottom:16px}
 .tablebox{max-height:62vh;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.c-m{display:none}
 @media(max-width:760px){.kw{grid-template-columns:1fr}}
+/* ---- 모바일: 표 → 카드 ---- */
+@media(max-width:700px){
+  body{font-size:15px}
+  .wrap{padding:16px 12px 40px}
+  h1{font-size:19px;line-height:1.35}
+  .lead{font-size:13px}
+  .card{padding:14px;border-radius:12px}
+  #drop{padding:14px !important}
+  #drop b{font-size:14px}
+  #drop small{display:none}
+  .row{gap:6px}
+  .row button{flex:1 1 auto}
+  #allbar .row > b{width:100%}
+  #autoCard .row{flex-direction:column;align-items:stretch}
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .stat{min-width:0;padding:8px 10px}
+  .stat .n{font-size:19px}
+  .sechead{flex-wrap:wrap}
+  .sechead .file{width:100%;order:3}
+  .tabs{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
+  .tab{white-space:nowrap;flex:0 0 auto}
+  .tablebox{max-height:none;overflow:visible;border:0}
+  table.rtable thead tr{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--line)}
+  table.rtable thead th{display:none;background:none;border:0;padding:0}
+  table.rtable thead th:first-child{display:block}
+  table.rtable thead th:first-child::after{content:" 전체 선택";font-size:13px;color:var(--sub);vertical-align:middle}
+  table.rtable tbody tr{display:grid;grid-template-columns:30px 1fr;gap:3px 8px;padding:12px 4px;border-bottom:1px solid var(--line)}
+  table.rtable tbody td{border:0;padding:0}
+  table.rtable td.c-ck{grid-row:1 / span 4;padding-top:2px}
+  table.rtable td.c-ck input{width:20px;height:20px}
+  table.rtable td.c-no,table.rtable td.c-d{display:none}
+  table.rtable td.c-nm{font-size:15px;font-weight:500;line-height:1.45}
+  table.rtable td.c-org{font-size:13px;color:var(--sub)}
+  table.rtable td.c-m{display:block;font-size:12.5px;color:var(--sub)}
+  table.rtable td.c-kw:empty{display:none}
+  table.rtable tr.empty-row{display:block}
+  .foot{flex-wrap:wrap;padding-bottom:max(8px, env(safe-area-inset-bottom))}
+  .foot button{flex:1 1 45%;font-size:13px;padding:10px 8px}
+  #richOut{font-size:12px}
+}
 </style>
 </head>
 <body>
@@ -238,18 +279,19 @@ function sectionHTML(kind, S){
     <div class="stats">${stats.map(([n,l]) => `<div class="stat"><div class="n">${n.toLocaleString()}</div><div class="l">${l}</div></div>`).join('')}</div>
     <div class="tabs">${tabs.map(([k,l]) => `<button class="tab ${S.tab===k?'on':''}" data-t="${k}">${l} ${k==='sel'?S.checked.size:by(k).length}</button>`).join('')}</div>
     <p class="hint">${HINT[S.tab]}${kind === '발주계획' && sets['사전규격공개'] ? ' 보라색 「사전규격 중복」은 사전규격에 이미 올라온 건이라 선택을 풀어뒀어요(필요하면 다시 체크). 「중복 의심」은 이름이 비슷한 건으로, 선택은 그대로 두니 확인해 보세요.' : ''}</p>
-    <div class="tablebox"><table>
+    <div class="tablebox"><table class="rtable">
       <thead><tr><th><input type="checkbox" data-act="all" ${list.length && list.every(x => S.checked.has(x.i)) ? 'checked' : ''}></th><th>No</th><th>사업명</th><th>수요기관</th><th>${ix.contract >= 0 ? '계약방법' : '진행상태'}</th><th>${esc(ix.whenLabel || '일자')}</th><th style="text-align:right">예산금액</th><th>걸린 키워드</th></tr></thead>
       <tbody>${list.length ? list.map(x => `<tr class="${x.dup === 'same' ? 'dup' : ''}">
-        <td><input type="checkbox" data-i="${x.i}" ${S.checked.has(x.i)?'checked':''}></td>
-        <td class="nw">${cell(x.r, ix.no)}</td>
-        <td>${highlight(String(x.r[ix.name]), [...x.core, ...x.res, ...x.bl])}</td>
-        <td>${cell(x.r, ix.org)}</td>
-        <td class="nw">${cell(x.r, ix.contract >= 0 ? ix.contract : ix.status)}</td>
-        <td class="nw">${cell(x.r, ix.when)}</td>
-        <td class="num">${cell(x.r, ix.budget)}</td>
-        <td>${x.dup === 'same' ? '<span class="tag t-dup">사전규격 중복</span>' : x.dup === 'maybe' ? '<span class="tag t-dup">중복 의심</span>' : ''}${x.bl.map(k=>`<span class="tag t-bl">${esc(k)}</span>`).join('')}${x.core.map(k=>`<span class="tag t-core">${esc(k)}</span>`).join('')}${x.res.map(k=>`<span class="tag t-res">${esc(k)}</span>`).join('')}</td>
-      </tr>`).join('') : `<tr><td colspan="8" style="text-align:center;color:var(--sub);padding:24px">해당 건이 없어요</td></tr>`}</tbody>
+        <td class="c-ck"><input type="checkbox" data-i="${x.i}" ${S.checked.has(x.i)?'checked':''}></td>
+        <td class="nw c-no">${cell(x.r, ix.no)}</td>
+        <td class="c-nm">${highlight(String(x.r[ix.name]), [...x.core, ...x.res, ...x.bl])}</td>
+        <td class="c-org">${cell(x.r, ix.org)}</td>
+        <td class="nw c-d">${cell(x.r, ix.contract >= 0 ? ix.contract : ix.status)}</td>
+        <td class="nw c-d">${cell(x.r, ix.when)}</td>
+        <td class="num c-d">${cell(x.r, ix.budget)}</td>
+        <td class="c-m">${[cell(x.r, ix.contract >= 0 ? ix.contract : ix.status), (ix.whenLabel ? esc(ix.whenLabel) + ' ' : '') + cell(x.r, ix.when), cell(x.r, ix.budget) ? cell(x.r, ix.budget) + '원' : ''].filter(Boolean).join(' · ')}</td>
+        <td class="c-kw">${x.dup === 'same' ? '<span class="tag t-dup">사전규격 중복</span>' : x.dup === 'maybe' ? '<span class="tag t-dup">중복 의심</span>' : ''}${x.bl.map(k=>`<span class="tag t-bl">${esc(k)}</span>`).join('')}${x.core.map(k=>`<span class="tag t-core">${esc(k)}</span>`).join('')}${x.res.map(k=>`<span class="tag t-res">${esc(k)}</span>`).join('')}</td>
+      </tr>`).join('') : `<tr class="empty-row"><td colspan="8" style="text-align:center;color:var(--sub);padding:24px">해당 건이 없어요</td></tr>`}</tbody>
     </table></div>
     <div class="foot row">
       <button class="primary" data-act="dl" ${S.checked.size ? '' : 'disabled'}>선택한 ${S.checked.size}건 엑셀 다운로드</button>
