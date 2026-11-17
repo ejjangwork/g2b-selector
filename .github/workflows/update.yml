@@ -6,7 +6,8 @@ on:
     # GitHub은 UTC 기준: 한국 07~08시 = UTC 22~23시, 09~18시 = UTC 0~9시
     - cron: '47 22-23 * * *'
     - cron: '47 0-9 * * *'
-
+  workflow_dispatch: {}   # Actions 화면의 "Run workflow" 버튼으로 수시 실행
+  
 permissions:
   contents: write
 
