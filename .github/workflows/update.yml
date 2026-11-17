@@ -4,8 +4,8 @@ on:
   schedule:
     # 한국시간 매일 08:03 ~ 18:03 매시간 (GitHub은 UTC 기준: 한국 08시 = UTC 23시, 09~18시 = UTC 0~9시)
     # 정각은 GitHub이 붐벼서 3분에 실행. GitHub 사정으로 5~20분 늦게 돌 수 있음
-    - cron: '3 23 * * *'
-    - cron: '3 0-9 * * *'
+    - cron: '17,47 23 * * *'
+    - cron: '17,47 0-9 * * *'
   workflow_dispatch: {}   # Actions 화면의 "Run workflow" 버튼으로 수시 실행
 
 permissions:
