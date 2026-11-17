@@ -62,6 +62,11 @@ mask = lambda s: (str(s)[:1] + '**') if s else '-'
 won = lambda s: f'{int(float(s)):,}' if str(s).strip() not in ('', 'None') else ''
 day = lambda s: str(s)[:10].replace('-', '/')
 
+
+def link(url, files, no):
+    """표 열 뒤에 붙는 숨은 칸: 원문 링크·규격서 파일·등록번호 (엑셀로는 안 나감)"""
+    return json.dumps({'u': url or '', 'f': [f for f in files if f], 'no': no or ''}, ensure_ascii=False)
+
 # 발주계획 (용역) — 엑셀의 발주시기 기본범위와 같게 이번달-2 ~ +10개월
 order = fetch_all('OrderPlanSttusService/getOrderPlanSttusListServc',
                   dict(inqryDiv=1, inqryBgnDt=bg, inqryEndDt=en, orderBgnYm=ym(now, -2), orderEndYm=ym(now, 10)))
@@ -70,7 +75,8 @@ H1 = ['No', '업무구분', '업무여부', '발주시기', '조달방식', '계
       '담당부서명', '담당자', '전화번호', '진행일자', '진행상태', '참조여부', '예산금액']
 R1 = [[str(i + 1), x['bsnsDivNm'], '내자', f"{x['orderYear']}/{x['orderMnth']}", x.get('prcrmntMethd', ''), x.get('cntrctMthdNm', ''),
        x['bizNm'], x.get('orderInsttNm', ''), x.get('jrsdctnDivNm', ''), x.get('jrsdctnDivNm', ''), x.get('deptNm', ''), mask(x.get('ofclNm')), '-',
-       day(x.get('nticeDt', '')), '작성완료', '', won(x.get('sumOrderAmt', ''))] for i, x in enumerate(order)]
+       day(x.get('nticeDt', '')), '작성완료', '', won(x.get('sumOrderAmt', '')), link(x.get('orderPlanDtlUrl'), [], x.get('orderPlanUntyNo'))]
+      for i, x in enumerate(order)]
 
 # 사전규격 (용역)
 pre = fetch_all('HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc', dict(inqryDiv=1, inqryBgnDt=bg, inqryEndDt=en))
@@ -78,7 +84,8 @@ pre = sorted([x for x in pre if x.get('bsnsDivNm') == '일반용역'], key=lambd
 nows = now.strftime('%Y-%m-%d %H:%M:%S')
 H2 = ['No', '업무구분', '업무여부', '사업명', '수요기관', '공고기관', '담당자', '진행일자', '진행상태', '참조여부', '업체등록수', '예산금액']
 R2 = [[str(i + 1), x['bsnsDivNm'], '내자', x['prdctClsfcNoNm'], x.get('rlDminsttNm', ''), x.get('orderInsttNm', ''), mask(x.get('ofclNm')),
-       day(x.get('rgstDt', '')), '게시중' if (x.get('opninRgstClseDt') or '') >= nows else '마감', '', '', won(x.get('asignBdgtAmt', ''))]
+       day(x.get('rgstDt', '')), '게시중' if (x.get('opninRgstClseDt') or '') >= nows else '마감', '', '', won(x.get('asignBdgtAmt', '')),
+       link('', [x.get(f'specDocFileUrl{n}') for n in range(1, 6)], x.get('bfSpecRgstNo'))]
       for i, x in enumerate(pre)]
 
 created = now.strftime('%Y/%m/%d')
