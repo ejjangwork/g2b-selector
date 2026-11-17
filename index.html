@@ -113,7 +113,7 @@ tr.dup mark{background:#f3f0e0}
 <body>
 <div class="wrap">
   <h1>나라장터 발주계획·사전규격_용역 선별기</h1>
-  <p class="lead">나라장터 발주계획·사전규격공개(일반용역)에서 수의계약을 빼고 조사·연구성 용역만 골라 보여줍니다. 매일 오전 8시~오후 6시 매시간 나라장터 API로 자동 수집돼요.</p>
+  <p class="lead">나라장터 발주계획·사전규격공개(일반용역)에서 수의계약을 빼고 조사·연구성 용역만 골라 보여줍니다. 매일 오전 8시~오후 6시, 30분마다 나라장터 API로 자동 수집돼요.</p>
 
   <div class="card" id="autoCard">
     <div class="row" style="justify-content:space-between">
@@ -495,7 +495,7 @@ async function getLatest(){
 function showLatestInfo(){
     const g = latest.generatedAt, rg = latest.range.replace(/(\d{4})(\d{2})(\d{2})/g, (m,y,mo,d) => `${+mo}/${+d}`);
     $('autoTitle').textContent = `🔄 ${g} 기준 자동 수집 결과`;
-    $('autoSub').textContent = `나라장터 API · 진행일자 ${rg} · 매일 08~18시 매시간 자동 갱신(GitHub 사정으로 5~20분 늦을 수 있음). 공기업 자체조달 일부(약 5%)는 API에 안 잡혀서, 꼼꼼히 보려면 엑셀을 직접 올려도 돼요.`;
+    $('autoSub').textContent = `나라장터 API · 진행일자 ${rg} · 매일 08~18시 30분마다 자동 갱신(GitHub 사정으로 늦어질 수 있음). 공기업 자체조달 일부(약 5%)는 API에 안 잡혀서, 꼼꼼히 보려면 엑셀을 직접 올려도 돼요.`;
 }
 async function loadLatest(){
   try {
