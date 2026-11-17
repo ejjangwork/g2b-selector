@@ -113,6 +113,7 @@ tr.dup mark{background:#f3f0e0}
       <button class="primary" id="allXlsx">엑셀 다운로드 (사전규격·발주계획 시트 따로)</button>
       <button class="green" id="allText">표 형태로 복사 (메신저·메일용)</button>
       <span id="allMsg" style="color:var(--sub);font-size:13px"></span>
+      <button id="textClose" class="hidden" style="margin-left:auto">닫기 ✕</button>
     </div>
     <div id="textBox" class="hidden" style="margin-top:12px">
       <p class="hint" id="textHint" style="margin-bottom:6px"></p>
@@ -393,6 +394,9 @@ $('file').onchange = e => { if (e.target.files.length) handleFiles([...e.target.
 ['dragleave','drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
 drop.addEventListener('drop', e => e.dataTransfer.files.length && handleFiles([...e.dataTransfer.files]));
 $('allXlsx').onclick = downloadAll;
+$('textClose').onclick = () => { $('textBox').classList.add('hidden'); $('textClose').classList.add('hidden'); $('allMsg').textContent = ''; };
+new MutationObserver(() => $('textClose').classList.toggle('hidden', $('textBox').classList.contains('hidden')))
+  .observe($('textBox'), {attributes: true, attributeFilter: ['class']});
 $('allText').onclick = () => copyText(kindsInOrder());
 $('apply').onclick = () => { saveKw(); runAll(); };
 $('reset').onclick = () => { try{localStorage.removeItem(LS);}catch(e){} $('kwCore').value=DEFAULTS.core; $('kwRes').value=DEFAULTS.res; $('kwBl').value=DEFAULTS.bl; runAll(); };
