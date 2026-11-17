@@ -67,7 +67,7 @@ tr.dup mark{background:#f3f0e0}
 <body>
 <div class="wrap">
   <h1>나라장터 발주계획·사전규격_용역 선별기</h1>
-  <p class="lead">나라장터 발주계획·사전규격공개(일반용역)에서 수의계약을 빼고 조사·연구성 용역만 골라 보여줍니다. 매일 아침 8:30, 오후 5:00에 나라장터 API로 자동 수집돼요.</p>
+  <p class="lead">나라장터 발주계획·사전규격공개(일반용역)에서 수의계약을 빼고 조사·연구성 용역만 골라 보여줍니다. 매일 오전 8시~오후 6시 매시간 나라장터 API로 자동 수집돼요.</p>
 
   <div class="card" id="autoCard">
     <div class="row" style="justify-content:space-between">
@@ -78,6 +78,10 @@ tr.dup mark{background:#f3f0e0}
       </div>
     </div>
     <div id="fireMsg" class="hint hidden" style="margin:10px 0 0"></div>
+    <div id="newData" class="row hidden" style="margin-top:10px;padding:10px 12px;background:var(--blue-soft);border-radius:8px">
+      <span id="newDataTxt" style="flex:1"></span>
+      <button class="primary" id="newDataBtn">새 데이터 불러오기</button>
+    </div>
   </div>
 
   <div class="card">
@@ -434,7 +438,7 @@ async function getLatest(){
 function showLatestInfo(){
     const g = latest.generatedAt, rg = latest.range.replace(/(\d{4})(\d{2})(\d{2})/g, (m,y,mo,d) => `${+mo}/${+d}`);
     $('autoTitle').textContent = `🔄 ${g} 기준 자동 수집 결과`;
-    $('autoSub').textContent = `나라장터 API · 진행일자 ${rg} · 매일 8:30·17:00 자동 갱신(GitHub 사정으로 5~20분 늦을 수 있음). 공기업 자체조달 일부(약 5%)는 API에 안 잡혀서, 꼼꼼히 보려면 엑셀을 직접 올려도 돼요.`;
+    $('autoSub').textContent = `나라장터 API · 진행일자 ${rg} · 매일 08~18시 매시간 자동 갱신(GitHub 사정으로 5~20분 늦을 수 있음). 공기업 자체조달 일부(약 5%)는 API에 안 잡혀서, 꼼꼼히 보려면 엑셀을 직접 올려도 돼요.`;
 }
 async function loadLatest(){
   try {
@@ -484,6 +488,25 @@ $('fireNow').onclick = () => {
 $('autoReload').onclick = () => { Object.keys(sets).forEach(k => delete sets[k]); applyLatest(); autoStatus(); };
 const _render = renderAll;
 renderAll = function(){ _render(); autoStatus(); };
+
+// ---- 열어둔 페이지도 5분마다 새 데이터 확인 → 알림만 띄우고, 누르면 반영 ----
+let pending = null;
+setInterval(async () => {
+  if (!latest || polling) return;
+  try {
+    const j = await getLatest();
+    if (j.generatedAt !== latest.generatedAt && (!pending || pending.generatedAt !== j.generatedAt)) {
+      pending = j;
+      $('newDataTxt').textContent = `🆕 ${j.generatedAt} 기준 새 데이터가 들어왔어요.`;
+      $('newData').classList.remove('hidden');
+    }
+  } catch(e) {}
+}, 5 * 60000);
+$('newDataBtn').onclick = () => {
+  if (!pending) return;
+  latest = pending; pending = null; $('newData').classList.add('hidden');
+  showLatestInfo(); Object.keys(sets).forEach(k => delete sets[k]); applyLatest(); autoStatus();
+};
 
 loadKw();
 loadLatest();
