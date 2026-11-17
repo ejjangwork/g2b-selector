@@ -505,7 +505,7 @@ const ghRepo = (() => {   // https://<아이디>.github.io/<저장소>/ → <아
   const p = location.pathname.split('/').filter(Boolean)[0];
   return m && p ? `${m[1]}/${p}` : '';
 })();
-if (ghRepo) $('fireNow').classList.remove('hidden');
+// 버튼은 숨김 (실행은 저장소 주인만 가능 → GitHub Actions 화면에서 직접 Run workflow)
 function pollForNew(prevAt){
   clearInterval(polling);
   const t0 = Date.now();
