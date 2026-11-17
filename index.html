@@ -229,6 +229,7 @@ function classify(parsed, kw){
 // ---------------------
 
 const ORDER = ['사전규격공개', '발주계획'];
+const collapsed = {};   // 결과 칸 접힘 상태 (데이터가 새로 들어와도 유지)
 const sets = {};   // kind -> {parsed, result, checked, tab, fileTag, fileName, msg}
 
 function currentKw(){ return {core: split($('kwCore').value), res: split($('kwRes').value), bl: split($('kwBl').value)}; }
@@ -280,7 +281,8 @@ function sectionHTML(kind, S){
   const list = listOf(S);
   const cell = (r, k) => k >= 0 ? esc(r[k] ?? '') : '';
   return `<div class="card" data-kind="${esc(kind)}">
-    <div class="sechead"><span class="badge b-${esc(kind)}">${esc(kind)}</span><h2>선별 결과</h2><span class="file">${esc(S.fileName)}${S.parsed.created ? ' · 생성일 ' + S.parsed.created : ''}</span><button class="x" data-act="remove">닫기</button></div>
+    <div class="sechead"><span class="badge b-${esc(kind)}">${esc(kind)}</span><h2>선별 결과</h2><span class="file">${esc(S.fileName)}${S.parsed.created ? ' · 생성일 ' + S.parsed.created : ''}</span><button class="x" data-act="collapse">${collapsed[kind] ? '열기 ▾' : '닫기 ✕'}</button></div>
+    <div class="secbody" ${collapsed[kind] ? 'hidden' : ''}>
     <div class="stats">${stats.map(([n,l]) => `<div class="stat"><div class="n">${n.toLocaleString()}</div><div class="l">${l}</div></div>`).join('')}</div>
     <div class="tabs">${tabs.map(([k,l]) => `<button class="tab ${S.tab===k?'on':''}" data-t="${k}">${l} ${k==='sel'?S.checked.size:by(k).length}</button>`).join('')}</div>
     <p class="hint">${HINT[S.tab]}${kind === '발주계획' && sets['사전규격공개'] ? ' 보라색 「사전규격 중복」은 사전규격에 이미 올라온 건이라 선택을 풀어뒀어요(필요하면 다시 체크). 「중복 의심」은 이름이 비슷한 건으로, 선택은 그대로 두니 확인해 보세요.' : ''}</p>
@@ -302,6 +304,7 @@ function sectionHTML(kind, S){
       <button class="primary" data-act="dl" ${S.checked.size ? '' : 'disabled'}>선택한 ${S.checked.size}건 엑셀 다운로드</button>
       <button class="green" data-act="text" ${S.checked.size ? '' : 'disabled'}>표 형태로 복사 (메신저·메일용)</button>
       <span class="msg" style="color:var(--sub);font-size:13px">${esc(S.msg || '')}</span>
+    </div>
     </div>
   </div>`;
 }
@@ -459,7 +462,7 @@ $('results').addEventListener('click', e => {
   if (a.dataset.act === 'dl') download(S);
   else if (a.dataset.act === 'copy') copy(S);
   else if (a.dataset.act === 'text') copyText([S.parsed.kind]);
-  else if (a.dataset.act === 'remove') { const k = e.target.closest('[data-kind]').dataset.kind; delete sets[k]; if (k === '사전규격공개' && sets['발주계획']) runSet(sets['발주계획']); renderAll(); }
+  else if (a.dataset.act === 'collapse') { const k = e.target.closest('[data-kind]').dataset.kind; collapsed[k] = !collapsed[k]; renderAll(); }
 });
 $('results').addEventListener('change', e => {
   const S = secOf(e.target); if (!S) return;
