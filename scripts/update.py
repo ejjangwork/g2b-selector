@@ -1,6 +1,8 @@
 """나라장터 발주계획·사전규격(일반용역) 수집 → 엑셀과 같은 열 형식의 data/latest.json
 GitHub Actions에서 실행: 인증키는 저장소 Secret NARA_API_KEY 로 전달됨
-사용법: python3 scripts/update.py data/latest.json [기간일수=5]
+사용법: python3 scripts/update.py data/latest.json
+수집 기간: 월요일은 지난주 금요일 ~ 오늘(4일), 그 외 요일은 그저께 ~ 오늘(3일)
+         → 공휴일이 하루 끼어도 놓치지 않도록 하루 여유를 둠
 """
 import json, sys, time, urllib.request, urllib.parse
 from datetime import datetime, timedelta, timezone
@@ -8,10 +10,16 @@ from datetime import datetime, timedelta, timezone
 import os
 KEY = os.environ['NARA_API_KEY'].strip()
 OUT = sys.argv[1]
-DAYS = int(sys.argv[2]) if len(sys.argv) > 2 else 5
 KST = timezone(timedelta(hours=9))
 now = datetime.now(KST)
-bg = (now - timedelta(days=DAYS - 1)).strftime('%Y%m%d') + '0000'
+
+
+def start_day(d):
+    """월요일(0)이면 3일 전(지난주 금요일), 그 외에는 2일 전(그저께)"""
+    return d - timedelta(days=3 if d.weekday() == 0 else 2)
+
+
+bg = start_day(now).strftime('%Y%m%d') + '0000'
 en = now.strftime('%Y%m%d') + '2359'
 BASE = 'https://apis.data.go.kr/1230000/ao/'
 
