@@ -1,0 +1,35 @@
+name: 나라장터 수집
+
+on:
+  schedule:
+    # 한국시간 08:30, 17:00 (GitHub은 UTC 기준) — GitHub 사정으로 5~20분 늦게 돌 수 있음
+    - cron: '30 23 * * *'
+    - cron: '0 8 * * *'
+  workflow_dispatch: {}   # Actions 화면의 "Run workflow" 버튼으로 수시 실행
+
+permissions:
+  contents: write
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 나라장터 API 수집
+        env:
+          NARA_API_KEY: ${{ secrets.NARA_API_KEY }}
+        run: python3 scripts/update.py data/latest.json
+      - name: 결과 저장
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/latest.json
+          git diff --cached --quiet && echo "변경 없음" || (git commit -m "수집 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')" && git push)
