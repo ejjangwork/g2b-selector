@@ -101,6 +101,18 @@ while d.date() <= now.date():
                 added += 1
     d += timedelta(days=1)
 
+# 담당자 입력 실수 등 직접 고친 값 (data/overrides.json, 통합계약번호 기준) → 매번 다시 적용
+try:
+    OV = json.load(open(os.path.join(HERE, '..', 'data', 'overrides.json'), encoding='utf-8')).get('contracts', {})
+except FileNotFoundError:
+    OV = {}
+for r in rows:
+    o = OV.get(r[7] if len(r) > 7 else '')
+    if o:
+        if o.get('date'):
+            r[0] = o['date']
+        if o.get('amount'):
+            r[4] = int(o['amount'])
 rows.sort(key=lambda r: r[0], reverse=True)
 data.update(generatedAt=now.strftime('%Y-%m-%d %H:%M'), rows=rows)
 json.dump(data, open(OUT, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
