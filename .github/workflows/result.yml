@@ -1,0 +1,51 @@
+name: 경쟁사 개찰·계약 수집
+
+on:
+  schedule:
+    # 한국시간 08~19시 매시 23분 (UTC 23시, 0~10시)
+    - cron: '23 23 * * *'
+    - cron: '23 0-10 * * *'
+  workflow_dispatch:      # Actions 화면의 "Run workflow" 버튼으로 수시 실행
+    inputs:
+      result_from:
+        description: '개찰결과 과거분 채우기 시작일 (예: 20260101, 평소엔 비워두기)'
+        required: false
+        default: ''
+      contract_from:
+        description: '계약정보 과거분 채우기 시작일 (예: 20261001, 평소엔 비워두기)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: collect          # 발주계획·사전규격 수집과 겹치지 않게 차례로 실행
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 개찰결과 수집
+        env:
+          NARA_API_KEY: ${{ secrets.NARA_API_KEY }}
+          RESULT_FROM: ${{ github.event.inputs.result_from }}
+        run: python3 scripts/update_result.py data/result.json
+      - name: 계약정보 수집
+        continue-on-error: true   # 계약정보서비스 활용신청 전이거나 API 오류여도 개찰결과는 저장
+        env:
+          NARA_API_KEY: ${{ secrets.NARA_API_KEY }}
+          CONTRACT_FROM: ${{ github.event.inputs.contract_from }}
+        run: python3 scripts/update_contracts.py data/contracts.json
+      - name: 결과 저장
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/result.json data/contracts.json
+          git diff --cached --quiet && echo "변경 없음" || (git commit -m "경쟁사 수집 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')" && git pull --rebase -q && git push)
