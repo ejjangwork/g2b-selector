@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>나라장터 경쟁사 수주 현황</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{color-scheme:light;--bg:#f6f7f9;--card:#fff;--ink:#1d2433;--sub:#667085;--line:#e4e7ec;--blue:#2f5bea;--blue-soft:#eef2ff;--green:#11845b;--green-soft:#e8f6ef;--amber:#a15c00;--amber-soft:#fff4e0;--red:#b42318;--red-soft:#fdecea;--us:#d9480f;--us-soft:#fff1e8}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+.wrap{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
+h1{font-size:22px;margin:0 0 4px}
+.lead{color:var(--sub);margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+.srcs{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--sub);margin-bottom:14px}
+.srcs b{color:var(--ink);font-weight:500}
+.mtabs{display:flex;gap:4px;border-bottom:2px solid var(--line);margin-bottom:16px;position:sticky;top:0;background:var(--bg);z-index:5;padding-top:6px}
+.mtab{border:0;background:none;border-radius:8px 8px 0 0;padding:10px 18px;font-size:15px;font-weight:500;color:var(--sub);margin-bottom:-2px;border-bottom:2px solid transparent}
+.mtab.on{color:var(--ink);border-bottom-color:var(--ink);font-weight:700}
+details summary{cursor:pointer;font-weight:700}
+.kw{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.kw label{font-weight:500;font-size:13px;display:block;margin-bottom:4px}
+textarea{color:var(--ink);background:#fff;width:100%;min-height:100px;border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:13px;resize:vertical}
+input[type=search]{font:inherit;color:var(--ink);background:#fff;border:1px solid #cfd5df;border-radius:8px;padding:8px 12px;min-width:240px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button,select{font:inherit;color:var(--ink);border:1px solid #cfd5df;background:#fff;border-radius:8px;padding:8px 12px;cursor:pointer}
+button.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:500}
+.seg{display:inline-flex;border:1px solid #cfd5df;border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:7px 12px;border-right:1px solid #cfd5df}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--ink);color:#fff}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.stat{flex:1;min-width:140px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+.stat .n{font-size:21px;font-weight:700}
+.stat .l{color:var(--sub);font-size:12px}
+.stat.us{border-color:#ffc9a8;background:var(--us-soft)}
+.stat.us .n{color:var(--us)}
+.hint{color:var(--sub);font-size:12.5px;margin:8px 0 10px}
+.tablebox{max-height:72vh;overflow:auto;border:1px solid var(--line);border-radius:8px}
+table{width:100%;border-collapse:collapse;background:#fff}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--sub);font-weight:500;background:#fafbfc;position:sticky;top:0;z-index:1;white-space:nowrap}
+th.sort{cursor:pointer}th.sort:hover{color:var(--ink)}
+td.num,th.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+td.nw{white-space:nowrap}
+.sm{font-size:12px;color:var(--sub)}
+mark{background:#fff1a8;padding:0 1px;border-radius:2px}
+mark.co{background:#d9e4ff}
+.tag{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:999px;margin:1px 3px 1px 0;white-space:nowrap}
+.t-core{background:var(--green-soft);color:var(--green)}
+.t-res{background:var(--amber-soft);color:var(--amber)}
+.t-bl{background:var(--red-soft);color:var(--red)}
+.t-g{background:#eef0f4;color:#344054}
+.t-us{background:var(--us);color:#fff;font-weight:700}
+.st{display:inline-block;font-size:12px;padding:2px 8px;border-radius:6px;white-space:nowrap;font-weight:500}
+.st-ok{background:var(--blue-soft);color:var(--blue)}
+.st-fail{background:var(--red-soft);color:var(--red)}
+.st-etc{background:#f2f4f7;color:var(--sub)}
+.st-win{background:var(--green-soft);color:var(--green)}
+.new{display:inline-block;font-size:10.5px;font-weight:700;color:#fff;background:var(--us);border-radius:4px;padding:0 5px;margin-left:4px;vertical-align:1px}
+tr.click{cursor:pointer}
+tr.click:hover td{background:#fafbff}
+tr.open td{background:#f5f8ff}
+tr.det>td{background:#fbfcfe;padding:8px 10px 16px 30px}
+tr.us>td{background:var(--us-soft)}
+tr.us>td:first-child{box-shadow:inset 3px 0 0 var(--us)}
+tr.tot td{font-weight:700;background:#f4f6fa;position:sticky;bottom:0}
+.sub{width:auto;min-width:480px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.sub th{position:static;background:#f4f6fa}
+.sub td,.sub th{padding:5px 10px;font-size:13px}
+.sub tr.hit td{background:var(--us-soft);font-weight:500}
+.sub tr.w td{background:var(--green-soft)}
+.arrow{color:var(--sub);font-size:11px;display:inline-block;width:12px;transition:.15s}
+tr.open .arrow{transform:rotate(90deg)}
+.cohit{margin:0 0 12px;padding:10px 12px;border-radius:8px;background:var(--blue-soft);font-size:13.5px}
+.foot{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.bar{height:5px;border-radius:3px;background:var(--blue);opacity:.5;margin-top:4px}
+.bar.us{background:var(--us);opacity:.85}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+h4{margin:0 0 6px;font-size:13.5px}
+.hidden{display:none !important}
+.c-m{display:none}
+.zero{color:#c0c6d0}
+@media(max-width:760px){.kw,.cols2{grid-template-columns:1fr}}
+@media(max-width:700px){
+  body{font-size:15px}
+  .wrap{padding:14px 10px 40px}
+  h1{font-size:19px}
+  .lead{font-size:13px}
+  .card{padding:12px}
+  .mtabs{overflow-x:auto}
+  .mtab{padding:9px 12px;font-size:14px;white-space:nowrap}
+  input[type=search]{min-width:0;flex:1 1 100%}
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .stat{min-width:0;padding:8px 10px}.stat .n{font-size:18px}
+  .tablebox{max-height:none;border:0}
+  .tablebox.wide{overflow-x:auto}
+  .tablebox.wide td,.tablebox.wide th{padding:6px 6px;font-size:13px}
+  .sub{min-width:0;width:100%}
+  table.rt thead{display:none}
+  table.rt tr.click{display:grid;grid-template-columns:1fr auto;gap:3px 8px;padding:12px 4px;border-bottom:1px solid var(--line)}
+  table.rt tr.click td{border:0;padding:0}
+  table.rt td.c-x{display:none}
+  table.rt td.c-nm{grid-column:1;font-size:15px;font-weight:500;line-height:1.45}
+  table.rt td.c-st{grid-column:2;grid-row:1}
+  table.rt td.c-m{display:block;grid-column:1 / span 2;font-size:12.5px;color:var(--sub)}
+  table.rt tr.det{display:block}
+  table.rt tr.det>td{display:block;padding:4px 0 14px;overflow-x:auto}
+  .sub .biz{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>나라장터 경쟁사 수주 현황</h1>
+  <p class="lead">리서치·조사 업계 경쟁사가 어떤 공고에서 개찰 1순위·낙찰·계약을 했는지 봅니다. <b>개찰결과</b>가 가장 빠르고(개찰 당일), <b>계약정보</b>는 계약 체결 뒤에 올라와요.</p>
+  <div class="srcs" id="srcs">불러오는 중…</div>
+  <div id="newData" class="row hidden" style="margin:-4px 0 14px;padding:10px 12px;background:var(--blue-soft);border-radius:8px">
+    <span id="newDataTxt" style="flex:1"></span><button class="primary" id="newDataBtn">새 데이터 불러오기</button>
+  </div>
+
+  <div class="mtabs" id="mtabs">
+    <button class="mtab on" data-v="open">개찰결과</button>
+    <button class="mtab" data-v="cntr">계약정보</button>
+    <button class="mtab" data-v="corp">업체별</button>
+    <button class="mtab" data-v="client">클라이언트별</button>
+  </div>
+
+  <!-- ===== 개찰결과 ===== -->
+  <section id="v-open">
+    <div class="card">
+      <div class="row" style="margin-bottom:10px">
+        <div class="seg" id="oScope"><button data-s="comp" class="on">경쟁사 관련</button><button data-s="kw">조사·연구 키워드 (최근 2주)</button></div>
+        <select id="oMonth"></select>
+        <select id="oCorp"></select>
+        <select id="oSt"><option value="">상태 전체</option><option value="ok">개찰완료·낙찰</option><option value="fail">유찰</option><option value="etc">재입찰 등</option></select>
+        <input type="search" id="oQ" placeholder="🔍 사업명 · 기관 · 업체명">
+      </div>
+      <div class="stats" id="oStats"></div>
+      <div id="oCohit" class="cohit hidden"></div>
+      <div class="row hidden" id="oKwTabs" style="margin-bottom:8px"></div>
+      <p class="hint">줄을 누르면 전체 개찰순위가 펼쳐져요 (협상계약은 기술·가격 점수 포함). 개찰 1순위는 협상 결과에 따라 최종 낙찰자와 다를 수 있어요. 참여업체 전체 순위는 최근 2주 건부터 채워져요.</p>
+      <div class="tablebox">
+        <table class="rt">
+          <thead><tr><th>개찰일시</th><th>사업명 · 발주처</th><th class="num">참가</th><th>개찰 1순위</th><th>최종낙찰</th><th>상태</th><th>참여 경쟁사</th></tr></thead>
+          <tbody id="oTb"></tbody>
+        </table>
+      </div>
+      <div class="foot">
+        <button class="primary" id="oXlsx">엑셀 다운로드 (목록 + 개찰순위)</button>
+        <button id="oMore" class="hidden">더 보기</button>
+        <span id="oMsg" class="sm"></span>
+      </div>
+    </div>
+    <div class="card">
+      <details id="kwBox">
+        <summary>조사·연구 키워드 설정 <small style="font-weight:400;color:var(--sub)">(키워드 보기에서 쓰임, 이 브라우저에 저장)</small></summary>
+        <div class="kw">
+          <div><label>① 추천 키워드</label><textarea id="kwCore"></textarea></div>
+          <div><label>② 검토 키워드</label><textarea id="kwRes"></textarea></div>
+          <div><label>③ 제외 키워드</label><textarea id="kwBl"></textarea></div>
+        </div>
+        <div class="row" style="margin-top:10px"><button id="apply">키워드 적용</button><button id="reset">기본값으로 되돌리기</button></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ===== 계약정보 ===== -->
+  <section id="v-cntr" class="hidden">
+    <div class="card">
+      <div class="row" style="margin-bottom:10px">
+        <select id="cYear"></select><select id="cMonth"></select><select id="cCorp"></select>
+        <input type="search" id="cQ" placeholder="🔍 공고명 · 발주처">
+      </div>
+      <div class="stats" id="cStats"></div>
+      <div class="tablebox">
+        <table class="rt">
+          <thead><tr><th>계약일</th><th>공고명 · 발주처</th><th>수주업체</th><th class="num">계약금액</th></tr></thead>
+          <tbody id="cTb"></tbody>
+        </table>
+      </div>
+      <div class="foot"><button class="primary" id="cXlsx">엑셀 다운로드</button><button id="cMore" class="hidden">더 보기</button><span id="cMsg" class="sm"></span></div>
+    </div>
+  </section>
+
+  <!-- ===== 업체별 ===== -->
+  <section id="v-corp" class="hidden">
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <div class="seg" id="pSrc"><button data-s="cntr" class="on">계약 기준</button><button data-s="open">개찰 낙찰 기준</button></div>
+        <div class="seg" id="pUnit"><button data-u="amt" class="on">금액</button><button data-u="cnt">건수</button></div>
+        <div class="seg" id="pView"><button data-p="year" class="on">연도별</button><button data-p="month">월별</button></div>
+        <select id="pYear" class="hidden"></select>
+      </div>
+      <div class="stats" id="pStats"></div>
+      <p class="hint" id="pHint"></p>
+      <div class="tablebox wide"><table><thead id="pTh"></thead><tbody id="pTb"></tbody></table></div>
+      <div class="foot"><button class="primary" id="pXlsx">엑셀 다운로드</button><span class="sm">업체 줄을 누르면 주요 클라이언트와 최근 수주가 펼쳐져요.</span></div>
+    </div>
+  </section>
+
+  <!-- ===== 클라이언트별 ===== -->
+  <section id="v-client" class="hidden">
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <select id="kYear"></select>
+        <div class="seg" id="kUs"><button data-u="" class="on">전체</button><button data-u="has">리서치랩 수주 있음</button><button data-u="no">리서치랩 수주 없음</button></div>
+        <input type="search" id="kQ" placeholder="🔍 발주처(클라이언트) 이름">
+      </div>
+      <div class="stats" id="kStats"></div>
+      <p class="hint">계약 기준이에요. 같은 발주처 이름끼리 묶었고, 줄을 누르면 업체별·연도별 수주와 계약 목록이 펼쳐져요. 제목을 누르면 정렬이 바뀌어요.</p>
+      <div class="tablebox"><table class="rt"><thead><tr><th>#</th><th class="sort" data-k="nm">발주처</th><th class="num sort" data-k="amt">총 계약금액</th><th class="num sort" data-k="cnt">건수</th><th>최다 수주업체 (점유율)</th><th class="num sort" data-k="us">리서치랩</th><th class="num sort" data-k="nco">수주업체 수</th></tr></thead><tbody id="kTb"></tbody></table></div>
+      <div class="foot"><button class="primary" id="kXlsx">엑셀 다운로드</button><button id="kMore" class="hidden">더 보기</button></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const DEFAULTS = {
+  core: '여론, 인식, 설문, 통계, 성과분석, 성과, 만족도, 체감도, 청렴도, 조사, 연구조사, 실태, 실태조사, 서베이, 공론, 숙의, 정책자문, 정책수립, 정책개발, 발전전략, 발전계획, 중장기, 운영방안, 실행방안, 활용방안, 개선방안, 평가모니터링, 욕구, 욕구조사, 수요조사, 수요, 주간사업자, 복지, 에너지, 수소, 산업조사, 산업통계, 국가통계, 분류체계',
+  res: '연구, 전략, 방안, 컨설팅, 기본계획, 타당성, 자문, 평가, 마스터플랜, 로드맵, 빅데이터, 데이터, DB구축, DB현행화, DB',
+  bl: '태블릿, 주민역량, 지역역량, 개조사업, CCTV, 사전영향, 영향조사, 건강영향, 지하안전, 지장물, 수밀, 측량, 지반, 지질, 실시설계, 기본설계, 감리, 학술조사, 발굴, 행사, 공유회, 교류회, 청소, 환경미화, 시설관리, 사옥관리, 경비, 유지보수, 유지관리, 홈페이지, 시스템, 통신사업자, 임차, 폐기물, 수질, 배출량, 배출모형, 인벤토리, 실증, 시험, 기술개발, 코호트, 내성, 단백체, 유전자, 백신, 독성, 마이크로바이옴, 기능성, 특허, 지침서, 정기점검, 안전진단, 안전점검, 소방, 내진, 토지적성, 영향평가, ISP, 정보화전략, 보안, 회계, 투자자문, 매입, IR deck, 측정, 선정평가, 역량평가, 과제개발, 특강, 부동산, 통합관제, 언론스크랩, 콘텐츠, 셔틀, 운행, 급식, 보험, 복지포인트, 복지카드, 재가, 운반, 시설물, 인프라 구축, 배상책임'
+};
+const US = '리서치랩';
+const LS = 'g2b-result-kw-v1';
+const $ = id => document.getElementById(id);
+const split = s => s.split(/[,\n，]/).map(x => x.trim()).filter(Boolean);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const won = n => n == null || n === '' ? '' : Math.round(n).toLocaleString('ko-KR');
+const pct = n => n == null ? '' : (+n).toFixed(3).replace(/0+$/,'').replace(/\.$/,'') + '%';
+const eokT = n => !n ? '0' : n >= 1e8 ? (n/1e8).toFixed(1) + '억' : Math.round(n/1e4).toLocaleString('ko-KR') + '만';
+const eok = n => !n ? '<span class="zero">-</span>' : eokT(n);
+const nz = s => String(s ?? '').replace(/주식회사|유한회사|재단법인|사단법인|\(주\)|\(유\)|\(재\)|\(사\)|㈜/g, '').replace(/[^0-9A-Za-z가-힣]/g, '').toLowerCase();
+const tagG = g => g ? `<span class="tag ${g === US ? 't-us' : 't-g'}">${esc(g)}</span>` : '';
+const card = (v, l, u) => `<div class="stat ${u ? 'us' : ''}"><div class="n">${v}</div><div class="l">${esc(l)}</div></div>`;
+const sel = (el, opts) => { const v = el.value; el.innerHTML = opts.map(([v,l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join(''); if (opts.some(o => o[0] === v)) el.value = v; };
+const segOn = (seg, attr, v) => seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset[attr] === v));
+function hl(text, words, cls){
+  const ws = [...new Set(words)].filter(Boolean).sort((a,b) => b.length - a.length);
+  if (!ws.length) return esc(text);
+  const re = new RegExp('(' + ws.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi');
+  return String(text).split(re).map((p,i) => i % 2 ? `<mark${cls ? ` class="${cls}"` : ''}>${esc(p)}</mark>` : esc(p)).join('');
+}
+function xlsxOut(sheets, name){
+  const wb = XLSX.utils.book_new();
+  sheets.forEach(([title, aoa, widths]) => { const s = XLSX.utils.aoa_to_sheet(aoa); if (widths) s['!cols'] = widths.map(w => ({wch:w})); XLSX.utils.book_append_sheet(wb, s, title.slice(0,31)); });
+  XLSX.writeFile(wb, name);
+}
+const kstDay = (ms = 0) => new Date(Date.now() + 9*3600e3 - ms).toISOString().slice(0,10);
+const today = () => kstDay().replace(/-/g,'');
+const usFirst = gs => gs.slice().sort((a,b) => a === US ? -1 : b === US ? 1 : a.localeCompare(b, 'ko'));
+let qt;
+const debounce = f => () => { clearTimeout(qt); qt = setTimeout(f, 150); };
+
+// ---------- 데이터 ----------
+let CO = {groups: []}, RES = null, CNT = null, OI = [], CR = [];
+const fetchJ = async f => { const r = await fetch(`data/${f}?t=${Date.now()}`, {cache:'no-store'}); if (!r.ok) throw f; return r.json(); };
+function prepCntr(){
+  // [날짜, 공고명, 발주처, 수주업체, 계약금액, key, 출처('x' 엑셀/'a' API), 통합계약번호, 기관구분, 단독공동, 상세URL]
+  const recent = kstDay(14*864e5);
+  CR = (CNT ? CNT.rows : []).map(r => ({d: r[0], y: r[0].slice(0,4), m: r[0].slice(0,7), nm: r[1], cl: r[2], clk: nz(r[2]), g: r[3], amt: r[4] || 0,
+    api: r[6] === 'a', url: r[10] || '', kind: r[8] || '', isNew: r[6] === 'a' && r[0] >= recent}));
+}
+function showSrcs(){
+  const a = RES ? `<span>⚡ 개찰결과 <b>${esc(RES.generatedAt)}</b> 기준 · 평일 낮 매시 갱신</span>` : '<span>개찰결과 데이터 없음</span>';
+  const td = kstDay(), last = (CR.find(r => r.d <= td) || {d: '-'}).d;
+  const b = CNT ? `<span>📄 계약정보 <b>${esc(CNT.generatedAt)}</b> 기준 · 최근 계약일 ${esc(last)} · 2020년~ 누적 ${CR.length.toLocaleString()}건</span>` : '<span>계약 데이터 없음</span>';
+  $('srcs').innerHTML = a + b;
+}
+
+// ---------- 메인 탭 ----------
+let view = 'open';
+$('mtabs').onclick = e => { const b = e.target.closest('[data-v]'); if (!b) return; view = b.dataset.v;
+  document.querySelectorAll('.mtab').forEach(x => x.classList.toggle('on', x === b));
+  ['open','cntr','corp','client'].forEach(v => $('v-' + v).classList.toggle('hidden', v !== view)); renderView(); };
+function renderView(){ ({open: oRender, cntr: cRender, corp: pRender, client: kRender})[view](); }
+
+// ========== 개찰결과 ==========
+let oScope = 'comp', kwTab = 'core', oLimit = 300; const opened = new Set();
+function loadKw(){ let k = null; try { k = JSON.parse(localStorage.getItem(LS) || 'null'); } catch(e) {} k = k || DEFAULTS; $('kwCore').value = k.core; $('kwRes').value = k.res; $('kwBl').value = k.bl; }
+function saveKw(){ try { localStorage.setItem(LS, JSON.stringify({core:$('kwCore').value,res:$('kwRes').value,bl:$('kwBl').value})); } catch(e) {} }
+const stCls = s => { s = s || ''; return s.includes('유찰') ? 'fail' : (s.includes('개찰완료') || s.includes('낙찰')) ? 'ok' : 'etc'; };
+function oPrep(){
+  const kw = {core: split($('kwCore').value), res: split($('kwRes').value), bl: split($('kwBl').value)};
+  OI = (RES ? RES.items : []).map(x => {
+    const core = kw.core.filter(k => x.nm.includes(k)), res = kw.res.filter(k => x.nm.includes(k)), bl = kw.bl.filter(k => x.nm.includes(k));
+    const cls = (!core.length && !res.length) ? 'none' : bl.length ? 'bl' : core.length ? 'core' : 'res';
+    return Object.assign({}, x, {core, res, bl, cls, sc: stCls(x.st), g: x.g || [], m: x.dt.slice(0,7)});
+  });
+  const ms = [...new Set(OI.filter(x => x.g.length).map(x => x.m))].sort().reverse();
+  sel($('oMonth'), [['', '월 전체'], ...ms.map(m => [m, `${m.slice(0,4)}년 ${+m.slice(5)}월`])]);
+}
+function oMatch(x, q){
+  if (!q) return {ok:true};
+  const n = nz(q);
+  const meta = [x.nm, x.inst, x.dmin, x.no].some(s => nz(s).includes(n));
+  const corp = (x.top && nz(x.top.nm).includes(n)) || (x.win && nz(x.win.nm).includes(n)) || (x.ranks || []).some(r => nz(r[1]).includes(n)) || x.g.some(g => nz(g).includes(n));
+  return {ok: meta || corp, corp};
+}
+function oList(){
+  const q = $('oQ').value.trim(), m = $('oMonth').value, g = $('oCorp').value, sf = $('oSt').value, rf = (RES && RES.recentFrom) || '';
+  return OI.filter(x => {
+    if (oScope === 'comp') { if (!x.g.length) return false; if (m && x.m !== m) return false; }
+    else { if (x.dt.slice(0,10) < rf) return false; if (q ? x.cls === 'none' : x.cls !== kwTab) return false; }
+    if (g && !x.g.includes(g)) return false;
+    if (sf && x.sc !== sf) return false;
+    return oMatch(x, q).ok;
+  });
+}
+function oRender(){
+  const q = $('oQ').value.trim(), n = nz(q), qq = q ? [q] : [];
+  $('oMonth').classList.toggle('hidden', oScope !== 'comp');
+  $('oKwTabs').classList.toggle('hidden', oScope !== 'kw');
+  if (oScope === 'kw') {
+    const base = OI.filter(x => x.dt.slice(0,10) >= ((RES && RES.recentFrom) || '') && x.cls !== 'none');
+    $('oKwTabs').innerHTML = [['core','추천'],['res','검토'],['bl','제외됨']].map(([k,l]) => `<button class="${kwTab===k && !q ? 'primary':''}" data-t="${k}">${l} ${base.filter(x => x.cls === k).length}</button>`).join('');
+  }
+  const list = oList();
+  const t = $('oCorp').value || US;
+  const gTop = list.filter(x => x.top && x.top.g === t).length, gWin = list.filter(x => x.win && x.win.g === t), gIn = list.filter(x => x.g.includes(t)).length;
+  $('oStats').innerHTML = card(list.length.toLocaleString(), '표시 중인 개찰') + card(list.filter(x => x.sc === 'ok').length.toLocaleString(), '개찰완료·낙찰') +
+    card(list.filter(x => x.sc === 'fail').length.toLocaleString(), '유찰') +
+    card(`${gIn} · ${gTop} · ${gWin.length}`, `${t} 참여 · 1순위 · 낙찰`, t === US) + card(eokT(gWin.reduce((s,x) => s + (x.win.amt || 0), 0)), `${t} 낙찰금액`, t === US);
+  const hits = q ? list.filter(x => oMatch(x, q).corp) : [];
+  $('oCohit').classList.toggle('hidden', !hits.length);
+  if (hits.length) $('oCohit').innerHTML = `🏢 <b>"${esc(q)}"</b> 참여 개찰 <b>${hits.length}건</b> · 1순위 <b>${hits.filter(x => x.top && nz(x.top.nm).includes(n)).length}건</b> · 최종낙찰 <b>${hits.filter(x => x.win && nz(x.win.nm).includes(n)).length}건</b>`;
+
+  const show = list.slice(0, oLimit);
+  $('oTb').innerHTML = show.length ? show.map(x => {
+    const o = opened.has(x.k), isUs = x.g.includes(US);
+    const top = x.top ? `<div>${tagG(x.top.g)}${hl(x.top.nm, qq, 'co')}</div><div class="sm">${won(x.top.amt)}원${x.top.rate ? ' · ' + pct(x.top.rate) : ''}</div>` : '<span class="sm">-</span>';
+    const win = x.win && x.win.nm ? `<span class="st st-win">낙찰</span> ${tagG(x.win.g)}<b>${hl(x.win.nm, qq, 'co')}</b><div class="sm">${won(x.win.amt)}원${x.win.rate ? ' · ' + pct(x.win.rate) : ''}</div>` : '<span class="sm">-</span>';
+    const kwt = [...x.core.map(k => `<span class="tag t-core">${esc(k)}</span>`), ...x.res.map(k => `<span class="tag t-res">${esc(k)}</span>`), ...x.bl.map(k => `<span class="tag t-bl">✕ ${esc(k)}</span>`)].join('');
+    const gs = x.g.length ? x.g.map(tagG).join('') : (oScope === 'kw' ? kwt : '');
+    const mob = `${esc(x.dt.slice(5))} · 참가 ${x.cnt || '-'}곳` + (x.top ? ` · 1순위 <b style="color:var(--ink)">${esc(x.top.nm)}</b>` : '') + (x.win && x.win.nm ? ` · <span class="st st-win">낙찰</span> ${esc(x.win.nm)}` : '') + (x.g.length ? '<br>' + x.g.map(tagG).join('') : '');
+    let det = '';
+    if (o) {
+      const info = `<div class="sm" style="margin-top:6px">${esc(x.inst)}${x.dmin && x.dmin !== x.inst ? ' · 수요기관 ' + esc(x.dmin) : ''} · 공고번호 ${esc(x.no)}</div>`;
+      if (x.ranks && x.ranks.length) {
+        const ev = x.ranks.some(r => r[6] != null || r[8] != null);
+        const sc = v => v == null ? '' : (+v).toFixed(2).replace(/\.?0+$/,'');
+        det = `<tr class="det"><td colspan="7"><table class="sub"><thead><tr><th>순위</th><th>업체명</th><th class="biz">사업자번호</th><th class="num">투찰금액</th><th class="num">투찰률</th>${ev ? '<th class="num">기술</th><th class="num">가격</th><th class="num">종합</th>' : ''}<th>비고</th></tr></thead><tbody>` +
+          x.ranks.map(r => `<tr class="${(q && nz(r[1]).includes(n)) || r[9] === US ? 'hit' : ''} ${x.win && x.win.nm && nz(r[1]) === nz(x.win.nm) ? 'w' : ''}"><td class="nw">${esc(r[0])}</td><td>${tagG(r[9])}${hl(r[1], qq, 'co')}</td><td class="biz sm nw">${esc(r[2])}</td><td class="num">${won(r[3])}</td><td class="num">${pct(r[4])}</td>${ev ? `<td class="num">${sc(r[6])}</td><td class="num">${sc(r[7])}</td><td class="num"><b>${sc(r[8])}</b></td>` : ''}<td class="sm">${esc(r[5])}</td></tr>`).join('') +
+          `</tbody></table>${info}</td></tr>`;
+      } else det = `<tr class="det"><td colspan="7" class="sm">${x.sc === 'fail' ? '유찰된 건이에요.' : '참여업체 전체 순위는 아직 없어요 (최근 2주 건부터 채워져요).'}${info}</td></tr>`;
+    }
+    return `<tr class="click ${o ? 'open' : ''} ${isUs ? 'us' : ''}" data-k="${esc(x.k)}">
+      <td class="nw sm c-x">${esc(x.dt.slice(2))}</td>
+      <td class="c-nm"><span class="arrow">▶</span> ${hl(x.nm, oScope === 'kw' ? [...x.core, ...x.res, ...x.bl, ...qq] : qq)}<div class="sm">${hl(x.dmin || x.inst, qq)}</div></td>
+      <td class="num c-x">${x.cnt || '-'}</td><td class="c-x">${top}</td><td class="c-x">${win}</td>
+      <td class="c-st"><span class="st st-${x.sc}">${esc(x.st || '-')}</span></td><td class="c-x">${gs}</td><td class="c-m">${mob}</td></tr>${det}`;
+  }).join('') : `<tr><td colspan="7" class="sm" style="text-align:center;padding:24px">조건에 맞는 개찰결과가 없어요.</td></tr>`;
+  $('oMore').classList.toggle('hidden', list.length <= oLimit);
+  $('oMore').textContent = `더 보기 (${list.length - show.length}건 더)`;
+}
+$('oScope').onclick = e => { const b = e.target.closest('[data-s]'); if (!b) return; oScope = b.dataset.s; segOn($('oScope'), 's', oScope); oLimit = 300; oRender(); };
+$('oKwTabs').onclick = e => { const b = e.target.closest('[data-t]'); if (b) { kwTab = b.dataset.t; $('oQ').value = ''; oRender(); } };
+$('oTb').onclick = e => { const tr = e.target.closest('tr.click'); if (!tr) return; const k = tr.dataset.k; opened.has(k) ? opened.delete(k) : opened.add(k); oRender(); };
+['oMonth','oCorp','oSt'].forEach(id => $(id).onchange = () => { oLimit = 300; oRender(); });
+$('oQ').oninput = debounce(() => { oLimit = 300; oRender(); });
+$('oMore').onclick = () => { oLimit += 500; oRender(); };
+$('apply').onclick = () => { saveKw(); oPrep(); oRender(); };
+$('reset').onclick = () => { try { localStorage.removeItem(LS); } catch(e) {} loadKw(); oPrep(); oRender(); };
+$('oXlsx').onclick = () => {
+  const list = oList(); if (!list.length) return;
+  const H1 = ['No','개찰일시','사업명','공고기관','수요기관','공고번호','참가업체수','상태','개찰1순위','1순위 경쟁사','1순위 투찰금액','1순위 투찰률(%)','최종낙찰자','낙찰 경쟁사','낙찰금액','낙찰률(%)','참여 경쟁사'];
+  const R1 = list.map((x,i) => [i+1, x.dt, x.nm, x.inst, x.dmin, x.no, x.cnt, x.st, x.top ? x.top.nm : '', x.top ? x.top.g : '', x.top ? x.top.amt : '', x.top ? x.top.rate : '',
+    x.win ? x.win.nm : '', x.win ? x.win.g : '', x.win ? x.win.amt : '', x.win ? x.win.rate : '', x.g.join(', ')]);
+  const R2 = []; list.forEach(x => (x.ranks || []).forEach(r => R2.push([x.no, x.nm, r[0], r[1], r[9] || '', r[2], r[3], r[4], r[5], r[6] ?? '', r[7] ?? '', r[8] ?? ''])));
+  xlsxOut([['개찰결과', [H1, ...R1], [5,16,50,22,22,18,8,9,24,14,14,10,24,14,14,10,24]],
+           ['개찰순위', [['공고번호','사업명','순위','업체명','경쟁사','사업자번호','투찰금액','투찰률(%)','비고','기술평가','가격평가','종합평가'], ...R2], [18,50,6,26,14,13,14,10,18,9,9,9]]], `개찰결과_${today()}.xlsx`);
+  $('oMsg').textContent = `${list.length}건 내보냈어요.`;
+};
+
+// ========== 계약정보 ==========
+let cLimit = 300;
+function cList(){
+  const y = $('cYear').value, m = $('cMonth').value, g = $('cCorp').value, q = nz($('cQ').value.trim());
+  return CR.filter(r => (!y || r.y === y) && (!m || r.d.slice(5,7) === m) && (!g || r.g === g) && (!q || nz(r.nm).includes(q) || r.clk.includes(q)));
+}
+function cRender(){
+  const list = cList(), qv = $('cQ').value.trim(), qq = qv ? [qv] : [];
+  const sum = list.reduce((s,r) => s + r.amt, 0), us = list.filter(r => r.g === US), usAmt = us.reduce((s,r) => s + r.amt, 0);
+  $('cStats').innerHTML = card(list.length.toLocaleString() + '건', '계약 건수') + card(eokT(sum), '계약금액 합계') +
+    card(`${us.length}건 · ${eokT(usAmt)}`, '리서치랩', 1) + card(sum ? (usAmt / sum * 100).toFixed(1) + '%' : '-', '리서치랩 금액 점유율', 1) +
+    card(list.filter(r => r.isNew).length + '건', '최근 2주 새로 들어온 계약');
+  const show = list.slice(0, cLimit);
+  $('cTb').innerHTML = show.map(r => `<tr class="${r.g === US ? 'us' : ''}"><td class="nw sm c-x">${esc(r.d.replace(/-00$/,''))}</td>
+    <td class="c-nm">${r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener" style="color:inherit">${hl(r.nm, qq)}</a>` : hl(r.nm, qq)}${r.isNew ? '<span class="new">NEW</span>' : ''}<div class="sm">${hl(r.cl, qq)}${r.kind ? ' · ' + esc(r.kind) : ''}</div></td>
+    <td class="c-st">${tagG(r.g)}</td><td class="num c-x">${won(r.amt)}</td>
+    <td class="c-m">${esc(r.d.replace(/-00$/,''))} · ${won(r.amt)}원</td></tr>`).join('') || `<tr><td colspan="4" class="sm" style="text-align:center;padding:24px">조건에 맞는 계약이 없어요.</td></tr>`;
+  $('cMore').classList.toggle('hidden', list.length <= cLimit); $('cMore').textContent = `더 보기 (${list.length - show.length}건 더)`;
+}
+['cYear','cMonth','cCorp'].forEach(id => $(id).onchange = () => { cLimit = 300; cRender(); });
+$('cQ').oninput = debounce(() => { cLimit = 300; cRender(); });
+$('cMore').onclick = () => { cLimit += 500; cRender(); };
+$('cXlsx').onclick = () => { const l = cList();
+  xlsxOut([['계약정보', [['계약일','계약년도','계약월','공고명','발주처','수주업체(통합)','계약금액','기관구분','출처'], ...l.map(r => [r.d, +r.y, +r.d.slice(5,7), r.nm, r.cl, r.g, r.amt, r.kind, r.api ? 'API' : '엑셀'])], [11,8,6,55,28,16,14,14,6]]], `경쟁사_계약정보_${today()}.xlsx`);
+  $('cMsg').textContent = `${l.length}건 내보냈어요.`; };
+
+// ========== 업체별 ==========
+let pSrc = 'cntr', pUnit = 'amt', pView = 'year', pLast = null; const pOpen = new Set();
+function pRows(){
+  if (pSrc === 'cntr') return CR.map(r => ({g: r.g, y: r.y, m: r.m, amt: r.amt, nm: r.nm, cl: r.cl, d: r.d}));
+  return OI.filter(x => x.win && x.win.g).map(x => ({g: x.win.g, y: x.dt.slice(0,4), m: x.dt.slice(0,7), amt: x.win.amt || 0, nm: x.nm, cl: x.dmin || x.inst, d: x.dt.slice(0,10)}));
+}
+function pRender(){
+  const rows = pRows();
+  const years = [...new Set(rows.map(r => r.y))].filter(y => y >= '2020').sort();
+  sel($('pYear'), years.slice().reverse().map(y => [y, y + '년']));
+  $('pYear').classList.toggle('hidden', pView !== 'month');
+  const yr = $('pYear').value || years[years.length - 1] || '';
+  const cols = pView === 'year' ? years : Array.from({length:12}, (_,i) => `${yr}-${String(i+1).padStart(2,'0')}`);
+  const colOf = r => pView === 'year' ? r.y : r.m;
+  const v = r => pUnit === 'amt' ? r.amt : 1;
+  const T = {}, tot = {};
+  rows.forEach(r => { const c = colOf(r); if (!cols.includes(c)) return; T[r.g] = T[r.g] || {}; T[r.g][c] = (T[r.g][c] || 0) + v(r); tot[c] = (tot[c] || 0) + v(r); });
+  const last = cols.filter(c => tot[c]).slice(-1)[0] || cols[cols.length - 1];
+  const gs = Object.keys(T).map(g => ({g, row: T[g], sum: cols.reduce((s,c) => s + (T[g][c] || 0), 0)}));
+  const keyOf = x => pView === 'year' ? (x.row[last] || 0) : x.sum;
+  gs.sort((a,b) => keyOf(b) - keyOf(a) || b.sum - a.sum);
+  const grand = cols.reduce((s,c) => s + (tot[c] || 0), 0);
+  const fmt = n => pUnit === 'amt' ? eok(n) : (n ? n.toLocaleString() : '<span class="zero">-</span>');
+  const lbl = pView === 'year' ? `${last}년` : `${yr}년`;
+  const usRow = gs.find(x => x.g === US), usVal = usRow ? keyOf(usRow) : 0, totVal = pView === 'year' ? (tot[last] || 0) : grand;
+  const unitS = n => pUnit === 'amt' ? eokT(n) : n.toLocaleString() + '건';
+  $('pStats').innerHTML = card(`${gs.findIndex(x => x.g === US) + 1 || '-'}위 / ${gs.length}곳`, `리서치랩 순위 (${lbl})`, 1) + card(unitS(usVal), `리서치랩 ${pUnit === 'amt' ? '금액' : '건수'} (${lbl})`, 1) +
+    card(totVal ? (usVal / totVal * 100).toFixed(1) + '%' : '-', `리서치랩 점유율 (${lbl})`, 1) + card(unitS(totVal), `경쟁사 전체 (${lbl})`) +
+    (gs[0] ? card(esc(gs[0].g), `1위 (${lbl}) · ${unitS(keyOf(gs[0]))}`) : '');
+  $('pHint').textContent = (pSrc === 'cntr' ? '계약 기준: 2020년~2026년 10월은 보내주신 엑셀, 그 뒤는 계약정보 API로 이어 붙여요.' : '개찰 낙찰 기준: 낙찰자가 확정된 개찰 건(2026년 1월부터)이에요. 계약보다 빠르게 잡히고, 금액은 낙찰금액이에요.')
+    + ` 정렬: ${lbl} ${pUnit === 'amt' ? '금액' : '건수'} 순.`;
+  const max = Math.max(...gs.map(keyOf), 1);
+  $('pTh').innerHTML = `<tr><th>#</th><th>업체</th>${cols.map(c => `<th class="num">${pView === 'year' ? c : +c.slice(5) + '월'}</th>`).join('')}<th class="num">${pView === 'year' ? '합계' : yr + '년 합계'}</th><th class="num">점유율</th></tr>`;
+  $('pTb').innerHTML = gs.map((x,i) => {
+    let det = '';
+    if (pOpen.has(x.g)) {
+      const mine = rows.filter(r => r.g === x.g && cols.includes(colOf(r)));
+      const byCl = {}; mine.forEach(r => { const k = nz(r.cl); byCl[k] = byCl[k] || {cl: r.cl, amt: 0, cnt: 0}; byCl[k].amt += r.amt; byCl[k].cnt++; });
+      const tops = Object.values(byCl).sort((a,b) => b.amt - a.amt).slice(0, 12);
+      const recent = mine.slice().sort((a,b) => b.d.localeCompare(a.d)).slice(0, 12);
+      det = `<tr class="det"><td colspan="${cols.length + 4}"><div class="cols2">
+        <div><h4>주요 클라이언트 (${pView === 'year' ? '전체 기간' : yr + '년'})</h4><table class="sub"><thead><tr><th>발주처</th><th class="num">건수</th><th class="num">금액</th></tr></thead><tbody>${tops.map(t => `<tr><td>${esc(t.cl)}</td><td class="num">${t.cnt}</td><td class="num">${won(t.amt)}</td></tr>`).join('')}</tbody></table></div>
+        <div><h4>최근 수주</h4><table class="sub"><thead><tr><th>날짜</th><th>사업명</th><th class="num">금액</th></tr></thead><tbody>${recent.map(t => `<tr><td class="nw sm">${esc(t.d.replace(/-00$/,''))}</td><td>${esc(t.nm)}<div class="sm">${esc(t.cl)}</div></td><td class="num">${won(t.amt)}</td></tr>`).join('')}</tbody></table></div>
+      </div></td></tr>`;
+    }
+    return `<tr class="click ${x.g === US ? 'us' : ''} ${pOpen.has(x.g) ? 'open' : ''}" data-g="${esc(x.g)}"><td class="sm">${i+1}</td><td class="nw"><span class="arrow">▶</span> <b>${esc(x.g)}</b><div class="bar ${x.g === US ? 'us' : ''}" style="width:${Math.max(2, keyOf(x) / max * 100)}%"></div></td>
+      ${cols.map(c => `<td class="num">${fmt(x.row[c] || 0)}</td>`).join('')}<td class="num"><b>${fmt(x.sum)}</b></td><td class="num sm">${grand ? (x.sum / grand * 100).toFixed(1) + '%' : ''}</td></tr>${det}`;
+  }).join('') + `<tr class="tot"><td></td><td>합계</td>${cols.map(c => `<td class="num">${fmt(tot[c] || 0)}</td>`).join('')}<td class="num">${fmt(grand)}</td><td></td></tr>`;
+  pLast = {cols, gs, tot, grand, yr};
+}
+$('pSrc').onclick = e => { const b = e.target.closest('[data-s]'); if (!b) return; pSrc = b.dataset.s; segOn($('pSrc'), 's', pSrc); $('pYear').value = ''; pRender(); };
+$('pUnit').onclick = e => { const b = e.target.closest('[data-u]'); if (!b) return; pUnit = b.dataset.u; segOn($('pUnit'), 'u', pUnit); pRender(); };
+$('pView').onclick = e => { const b = e.target.closest('[data-p]'); if (!b) return; pView = b.dataset.p; segOn($('pView'), 'p', pView); pRender(); };
+$('pYear').onchange = pRender;
+$('pTb').onclick = e => { const tr = e.target.closest('tr.click'); if (!tr) return; const g = tr.dataset.g; pOpen.has(g) ? pOpen.delete(g) : pOpen.add(g); pRender(); };
+$('pXlsx').onclick = () => {
+  const L = pLast; if (!L) return;
+  const H = ['순위','업체', ...L.cols.map(c => pView === 'year' ? c + '년' : +c.slice(5) + '월'), '합계', '점유율(%)'];
+  const R = L.gs.map((x,i) => [i+1, x.g, ...L.cols.map(c => x.row[c] || 0), x.sum, L.grand ? +(x.sum / L.grand * 100).toFixed(2) : 0]);
+  R.push(['', '합계', ...L.cols.map(c => L.tot[c] || 0), L.grand, '']);
+  const nm = `업체별_${pSrc === 'cntr' ? '계약' : '개찰낙찰'}_${pUnit === 'amt' ? '금액' : '건수'}_${pView === 'year' ? '연도별' : L.yr + '년월별'}`;
+  xlsxOut([[nm.replace('업체별_', ''), [H, ...R], [5,20, ...L.cols.map(() => 15), 16, 9]]], `${nm}_${today()}.xlsx`);
+};
+
+// ========== 클라이언트별 ==========
+let kUs = '', kSort = 'amt', kLimit = 200; const kOpen = new Set();
+function kList(){
+  const y = $('kYear').value, q = nz($('kQ').value.trim()), M = {};
+  CR.forEach(r => { if (y && r.y !== y) return; const c = (M[r.clk] = M[r.clk] || {k: r.clk, nm: r.cl, amt: 0, cnt: 0, by: {}, us: 0});
+    c.amt += r.amt; c.cnt++; c.by[r.g] = (c.by[r.g] || 0) + r.amt; if (r.g === US) c.us += r.amt; });
+  let L = Object.values(M).map(c => { const t = Object.entries(c.by).sort((a,b) => b[1] - a[1])[0]; return Object.assign(c, {top: t[0], topAmt: t[1], nco: Object.keys(c.by).length}); });
+  if (kUs === 'has') L = L.filter(c => c.us > 0); if (kUs === 'no') L = L.filter(c => !c.us);
+  if (q) L = L.filter(c => c.k.includes(q));
+  const s = {amt: (a,b) => b.amt - a.amt, cnt: (a,b) => b.cnt - a.cnt || b.amt - a.amt, us: (a,b) => b.us - a.us || b.amt - a.amt, nco: (a,b) => b.nco - a.nco || b.amt - a.amt, nm: (a,b) => a.nm.localeCompare(b.nm, 'ko')}[kSort];
+  return L.sort(s);
+}
+function kRender(){
+  const L = kList();
+  const tot = L.reduce((s,c) => s + c.amt, 0), usTot = L.reduce((s,c) => s + c.us, 0);
+  $('kStats').innerHTML = card(L.length.toLocaleString() + '곳', '발주처 수') + card(eokT(tot), '계약금액 합계') +
+    card(L.filter(c => c.us).length + '곳', '리서치랩이 수주한 발주처', 1) + card(tot ? (usTot / tot * 100).toFixed(1) + '%' : '-', '리서치랩 금액 점유율', 1);
+  const show = L.slice(0, kLimit);
+  $('kTb').innerHTML = show.map((c,i) => {
+    let det = '';
+    if (kOpen.has(c.k)) {
+      const mine = CR.filter(r => r.clk === c.k);
+      const ys = [...new Set(mine.map(r => r.y))].sort();
+      const by = {}; mine.forEach(r => { by[r.g] = by[r.g] || {}; by[r.g][r.y] = (by[r.g][r.y] || 0) + r.amt; });
+      const sumOf = g => Object.values(by[g]).reduce((s,v) => s+v, 0);
+      const gs = Object.keys(by).sort((a,b) => sumOf(b) - sumOf(a));
+      det = `<tr class="det"><td colspan="7"><h4>업체별 · 연도별 수주 (전체 기간)</h4>
+        <table class="sub"><thead><tr><th>업체</th>${ys.map(y => `<th class="num">${y}</th>`).join('')}<th class="num">합계</th></tr></thead><tbody>${gs.map(g => `<tr class="${g === US ? 'hit' : ''}"><td>${tagG(g)}</td>${ys.map(y => `<td class="num">${eok(by[g][y] || 0)}</td>`).join('')}<td class="num"><b>${eok(sumOf(g))}</b></td></tr>`).join('')}</tbody></table>
+        <h4 style="margin-top:12px">계약 목록</h4>
+        <table class="sub"><thead><tr><th>계약일</th><th>공고명</th><th>업체</th><th class="num">금액</th></tr></thead><tbody>${mine.slice(0, 40).map(r => `<tr class="${r.g === US ? 'hit' : ''}"><td class="nw sm">${esc(r.d.replace(/-00$/,''))}</td><td>${esc(r.nm)}</td><td>${tagG(r.g)}</td><td class="num">${won(r.amt)}</td></tr>`).join('')}</tbody></table>${mine.length > 40 ? `<div class="sm">외 ${mine.length - 40}건 (계약정보 탭에서 발주처로 검색하면 다 보여요)</div>` : ''}</td></tr>`;
+    }
+    const share = (c.topAmt / (c.amt || 1) * 100).toFixed(0);
+    return `<tr class="click ${kOpen.has(c.k) ? 'open' : ''}" data-k="${esc(c.k)}"><td class="sm c-x">${i+1}</td>
+      <td class="c-nm"><span class="arrow">▶</span> ${esc(c.nm)}</td><td class="num c-st"><b>${eok(c.amt)}</b></td><td class="num c-x">${c.cnt}</td>
+      <td class="c-x">${tagG(c.top)} <span class="sm">${share}%</span></td>
+      <td class="num c-x" style="${c.us ? 'color:var(--us);font-weight:700' : ''}">${eok(c.us)}</td><td class="num c-x">${c.nco}</td>
+      <td class="c-m">${c.cnt}건 · 최다 ${tagG(c.top)} ${share}%${c.us ? ` · <b style="color:var(--us)">리서치랩 ${eokT(c.us)}</b>` : ''}</td></tr>${det}`;
+  }).join('') || `<tr><td colspan="7" class="sm" style="text-align:center;padding:24px">조건에 맞는 발주처가 없어요.</td></tr>`;
+  $('kMore').classList.toggle('hidden', L.length <= kLimit); $('kMore').textContent = `더 보기 (${L.length - show.length}곳 더)`;
+  document.querySelectorAll('#v-client th.sort').forEach(th => th.textContent = th.textContent.replace(/ ▼$/, '') + (th.dataset.k === kSort ? ' ▼' : ''));
+}
+$('kYear').onchange = () => { kLimit = 200; kRender(); };
+$('kQ').oninput = debounce(() => { kLimit = 200; kRender(); });
+$('kUs').onclick = e => { const b = e.target.closest('[data-u]'); if (!b) return; kUs = b.dataset.u; segOn($('kUs'), 'u', kUs); kRender(); };
+document.querySelectorAll('#v-client th.sort').forEach(th => th.onclick = () => { kSort = th.dataset.k; kRender(); });
+$('kTb').onclick = e => { const tr = e.target.closest('tr.click'); if (!tr) return; const k = tr.dataset.k; kOpen.has(k) ? kOpen.delete(k) : kOpen.add(k); kRender(); };
+$('kMore').onclick = () => { kLimit += 300; kRender(); };
+$('kXlsx').onclick = () => {
+  const L = kList(), gs = usFirst(CO.groups);
+  xlsxOut([['클라이언트별', [['발주처','총 계약금액','건수','최다 수주업체','최다업체 점유율(%)','리서치랩 금액','수주업체 수', ...gs], ...L.map(c => [c.nm, c.amt, c.cnt, c.top, +(c.topAmt / (c.amt || 1) * 100).toFixed(1), c.us, c.nco, ...gs.map(g => c.by[g] || '')])], [34,15,7,16,10,14,9, ...gs.map(() => 13)]]],
+    `클라이언트별_${$('kYear').value || '전체'}_${today()}.xlsx`);
+};
+
+// ---------- 시작 ----------
+let firstFill = true;
+function fillFilters(){
+  const gs = usFirst(CO.groups);
+  sel($('oCorp'), [['', '경쟁사 전체'], ...gs.map(g => [g, g])]);
+  sel($('cCorp'), [['', '수주업체 전체'], ...gs.map(g => [g, g])]);
+  const ys = [...new Set(CR.map(r => r.y))].filter(y => y >= '2020').sort().reverse();
+  sel($('cYear'), [['', '연도 전체'], ...ys.map(y => [y, y + '년'])]);
+  sel($('kYear'), [['', '전체 기간 (2020~)'], ...ys.map(y => [y, y + '년'])]);
+  sel($('cMonth'), [['', '월 전체'], ...Array.from({length:12}, (_,i) => [String(i+1).padStart(2,'0'), (i+1) + '월'])]);
+  if (firstFill) { $('cYear').value = ys[0] || ''; firstFill = false; }
+}
+function applyAll(){ prepCntr(); oPrep(); fillFilters(); showSrcs(); renderView(); }
+async function load(){
+  const [co, res, cnt] = await Promise.allSettled([fetchJ('companies.json'), fetchJ('result.json'), fetchJ('contracts.json')]);
+  if (co.status === 'fulfilled') CO = co.value;
+  RES = res.status === 'fulfilled' ? res.value : null;
+  CNT = cnt.status === 'fulfilled' ? cnt.value : null;
+  applyAll();
+}
+let pend = null;
+setInterval(async () => {
+  try {
+    const [r, c] = await Promise.all([fetchJ('result.json'), fetchJ('contracts.json')]);
+    if ((RES && r.generatedAt !== RES.generatedAt) || (CNT && c.generatedAt !== CNT.generatedAt)) {
+      pend = [r, c]; $('newDataTxt').textContent = `🆕 새 데이터가 들어왔어요 (개찰 ${r.generatedAt} · 계약 ${c.generatedAt}).`; $('newData').classList.remove('hidden');
+    }
+  } catch(e) {}
+}, 5 * 60000);
+$('newDataBtn').onclick = () => { if (!pend) return; [RES, CNT] = pend; pend = null; $('newData').classList.add('hidden'); applyAll(); };
+
+loadKw(); load();
+</script>
+</body>
+</html>
