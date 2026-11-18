@@ -136,13 +136,14 @@ h4{margin:0 0 6px;font-size:13.5px}
         <div class="seg" id="oScope"><button data-s="comp" class="on">경쟁사 관련</button><button data-s="kw">조사·연구 키워드 (최근 2주)</button></div>
         <select id="oMonth"></select>
         <select id="oCorp"></select>
+        <select id="oRes"><option value="">결과 전체</option><option value="win">낙찰·1순위</option><option value="lose">탈락</option></select>
         <select id="oSt"><option value="">상태 전체</option><option value="ok">개찰완료·낙찰</option><option value="fail">유찰</option><option value="etc">재입찰 등</option></select>
         <input type="search" id="oQ" placeholder="🔍 사업명 · 기관 · 업체명">
       </div>
       <div class="stats" id="oStats"></div>
       <div id="oCohit" class="cohit hidden"></div>
       <div class="row hidden" id="oKwTabs" style="margin-bottom:8px"></div>
-      <p class="hint">줄을 누르면 전체 개찰순위가 펼쳐져요 (협상계약은 기술·가격 점수 포함). 개찰 1순위는 협상 결과에 따라 최종 낙찰자와 다를 수 있어요. 참여업체 전체 순위는 최근 2주 건부터 채워져요.</p>
+      <p class="hint">줄을 누르면 전체 개찰순위가 펼쳐져요 (협상계약은 기술·가격 점수 포함). 개찰 1순위는 협상 결과에 따라 최종 낙찰자와 다를 수 있어요. <span id="oCov"></span></p>
       <div class="tablebox">
         <table class="rt">
           <thead><tr><th>개찰일시</th><th>사업명 · 발주처</th><th class="num">참가</th><th>개찰 1순위</th><th>최종낙찰</th><th>상태</th><th>참여 경쟁사</th></tr></thead>
@@ -300,13 +301,22 @@ function oMatch(x, q){
   const corp = (x.top && nz(x.top.nm).includes(n)) || (x.win && nz(x.win.nm).includes(n)) || (x.ranks || []).some(r => nz(r[1]).includes(n)) || x.g.some(g => nz(g).includes(n));
   return {ok: meta || corp, corp};
 }
+// 선택한 업체(기본 리서치랩) 기준 결과: win 낙찰 / top 1순위(낙찰 미확정) / lose 탈락 / '' 미참여
+function outcome(x, t){
+  if (x.win && x.win.g === t) return 'win';
+  if (!x.g.includes(t)) return '';
+  if (!(x.win && x.win.nm) && x.top && x.top.g === t) return 'top';
+  return (x.win && x.win.nm) || x.sc === 'ok' ? 'lose' : '';
+}
 function oList(){
   const q = $('oQ').value.trim(), m = $('oMonth').value, g = $('oCorp').value, sf = $('oSt').value, rf = (RES && RES.recentFrom) || '';
+  const res = $('oRes').value, t = g || US;
   return OI.filter(x => {
     if (oScope === 'comp') { if (!x.g.length) return false; if (m && x.m !== m) return false; }
     else { if (x.dt.slice(0,10) < rf) return false; if (q ? x.cls === 'none' : x.cls !== kwTab) return false; }
     if (g && !x.g.includes(g)) return false;
     if (sf && x.sc !== sf) return false;
+    if (res) { const o = outcome(x, t); if (res === 'win' ? !(o === 'win' || o === 'top') : o !== 'lose') return false; }
     return oMatch(x, q).ok;
   });
 }
@@ -320,10 +330,17 @@ function oRender(){
   }
   const list = oList();
   const t = $('oCorp').value || US;
-  const gTop = list.filter(x => x.top && x.top.g === t).length, gWin = list.filter(x => x.win && x.win.g === t), gIn = list.filter(x => x.g.includes(t)).length;
-  $('oStats').innerHTML = card(list.length.toLocaleString(), '표시 중인 개찰') + card(list.filter(x => x.sc === 'ok').length.toLocaleString(), '개찰완료·낙찰') +
-    card(list.filter(x => x.sc === 'fail').length.toLocaleString(), '유찰') +
-    card(`${gIn} · ${gTop} · ${gWin.length}`, `${t} 참여 · 1순위 · 낙찰`, t === US) + card(eokT(gWin.reduce((s,x) => s + (x.win.amt || 0), 0)), `${t} 낙찰금액`, t === US);
+  const mine = list.filter(x => x.g.includes(t) || (x.win && x.win.g === t));
+  const oc = o => mine.filter(x => outcome(x, t) === o).length;
+  const gWin = mine.filter(x => x.win && x.win.g === t), gTop = mine.filter(x => x.top && x.top.g === t).length;
+  const done = oc('win') + oc('lose');
+  $('oStats').innerHTML = card(mine.length.toLocaleString() + '건', `${t} 참여`, t === US) +
+    card(`${gTop}건`, `${t} 개찰 1순위`, t === US) + card(`${gWin.length}건`, `${t} 최종낙찰`, t === US) +
+    card(`${oc('lose')}건`, `${t} 탈락`, t === US) +
+    card(done ? (oc('win') / done * 100).toFixed(0) + '%' : '-', `${t} 낙찰률 (낙찰÷결과 확정)`, t === US) +
+    card(eokT(gWin.reduce((s,x) => s + (x.win.amt || 0), 0)), `${t} 낙찰금액`, t === US);
+  const pend = (RES && RES.pendingRanks) || 0;
+  $('oCov').textContent = pend ? ` 참여·탈락은 참여업체 순위를 받은 건 기준이에요. 과거 조사·연구 사업 ${pend.toLocaleString()}건이 아직 확인 대기 중이라 실제보다 적게 나와요 (매시간 60건씩 채워짐).` : ' 참여·탈락은 조사·연구 키워드 사업과 경쟁사 1순위·낙찰 건의 참여업체 순위 기준이에요.';
   const hits = q ? list.filter(x => oMatch(x, q).corp) : [];
   $('oCohit').classList.toggle('hidden', !hits.length);
   if (hits.length) $('oCohit').innerHTML = `🏢 <b>"${esc(q)}"</b> 참여 개찰 <b>${hits.length}건</b> · 1순위 <b>${hits.filter(x => x.top && nz(x.top.nm).includes(n)).length}건</b> · 최종낙찰 <b>${hits.filter(x => x.win && nz(x.win.nm).includes(n)).length}건</b>`;
@@ -351,7 +368,7 @@ function oRender(){
       <td class="nw sm c-x">${esc(x.dt.slice(2))}</td>
       <td class="c-nm"><span class="arrow">▶</span> ${hl(x.nm, oScope === 'kw' ? [...x.core, ...x.res, ...x.bl, ...qq] : qq)}<div class="sm">${hl(x.dmin || x.inst, qq)}</div></td>
       <td class="num c-x">${x.cnt || '-'}</td><td class="c-x">${top}</td><td class="c-x">${win}</td>
-      <td class="c-st"><span class="st st-${x.sc}">${esc(x.st || '-')}</span></td><td class="c-x">${gs}</td><td class="c-m">${mob}</td></tr>${det}`;
+      <td class="c-st"><span class="st st-${x.sc}">${esc(x.st || '-')}</span>${(() => { const tt = $('oCorp').value || US, o = outcome(x, tt); return o === 'lose' ? `<div><span class="st st-fail" style="margin-top:3px">${esc(tt)} 탈락</span></div>` : o === 'win' ? `<div><span class="st st-win" style="margin-top:3px">${esc(tt)} 낙찰</span></div>` : ''; })()}</td><td class="c-x">${gs}</td><td class="c-m">${mob}</td></tr>${det}`;
   }).join('') : `<tr><td colspan="7" class="sm" style="text-align:center;padding:24px">조건에 맞는 개찰결과가 없어요.</td></tr>`;
   $('oMore').classList.toggle('hidden', list.length <= oLimit);
   $('oMore').textContent = `더 보기 (${list.length - show.length}건 더)`;
@@ -359,7 +376,7 @@ function oRender(){
 $('oScope').onclick = e => { const b = e.target.closest('[data-s]'); if (!b) return; oScope = b.dataset.s; segOn($('oScope'), 's', oScope); oLimit = 300; oRender(); };
 $('oKwTabs').onclick = e => { const b = e.target.closest('[data-t]'); if (b) { kwTab = b.dataset.t; $('oQ').value = ''; oRender(); } };
 $('oTb').onclick = e => { const tr = e.target.closest('tr.click'); if (!tr) return; const k = tr.dataset.k; opened.has(k) ? opened.delete(k) : opened.add(k); oRender(); };
-['oMonth','oCorp','oSt'].forEach(id => $(id).onchange = () => { oLimit = 300; oRender(); });
+['oMonth','oCorp','oSt','oRes'].forEach(id => $(id).onchange = () => { oLimit = 300; oRender(); });
 $('oQ').oninput = debounce(() => { oLimit = 300; oRender(); });
 $('oMore').onclick = () => { oLimit += 500; oRender(); };
 $('apply').onclick = () => { saveKw(); oPrep(); oRender(); };
