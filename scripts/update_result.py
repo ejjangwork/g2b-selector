@@ -6,7 +6,8 @@ GitHub Actions에서 실행: 인증키는 저장소 Secret NARA_API_KEY (조달�
 보관 기준
 - 경쟁사(data/companies.json)가 개찰 1순위·최종낙찰자·참여업체 중 하나라도 있으면 → 계속 보관 (월별·연도별 집계용)
 - 그 밖에 조사·연구 키워드(result.html 기본값)에 걸리는 건 → 최근 RECENT_DAYS일만 보관
-- 개찰순위(참여업체 전체)는 최근 건 위주로 한 번에 MAX_DETAIL건씩 받고, 받은 건 다시 안 받음
+- 조사·연구 키워드 사업과 경쟁사 1순위·낙찰 건은 참여업체 전체 순위(개찰순위)를 받음.
+  최신 건부터 한 번에 MAX_DETAIL건씩, 받은 건은 다시 안 받음 → 과거분은 며칠에 걸쳐 채워짐
 """
 import json, os, re, sys, time, urllib.request, urllib.parse
 from datetime import datetime, timedelta, timezone
@@ -18,7 +19,7 @@ from common import nz
 KEY = os.environ['NARA_API_KEY'].strip()
 OUT = sys.argv[1]
 RECENT_DAYS = int(os.environ.get('RESULT_DAYS', '14'))
-MAX_DETAIL = int(os.environ.get('RESULT_MAX_DETAIL', '150'))
+MAX_DETAIL = int(os.environ.get('RESULT_MAX_DETAIL', '60'))   # 하루 12번 × 60 = 720건 (개발계정 하루 한도 1,000건 안쪽)
 KST = timezone(timedelta(hours=9))
 now = datetime.now(KST)
 start = datetime.strptime(os.environ['RESULT_FROM'], '%Y%m%d').replace(tzinfo=KST) if os.environ.get('RESULT_FROM') \
@@ -121,7 +122,7 @@ try:
 except Exception as e:
     print('낙찰자 목록 실패(건너뜀):', e)
 
-fresh, newdetail = {}, 0
+fresh = {}
 for x in sorted(rows, key=lambda x: x.get('opengDt', ''), reverse=True):
     k = key(x)
     if k in fresh:
@@ -132,22 +133,9 @@ for x in sorted(rows, key=lambda x: x.get('opengDt', ''), reverse=True):
     it = {'k': k, 'no': f"{x.get('bidNtceNo')}-{x.get('bidNtceOrd', '')}", 'nm': nm,
           'inst': x.get('ntceInsttNm', ''), 'dmin': x.get('dminsttNm', ''), 'dt': str(x.get('opengDt', ''))[:16],
           'cnt': cnt, 'st': status, 'top': corp(x.get('opengCorpInfo')), 'win': win.get(k), 'ranks': None, 'kw': is_kw(nm)}
-    comp = bool((it['top'] or {}).get('g') or (it['win'] or {}).get('g'))
     old = prev.get(k)
-    if old and old.get('ranks') and old.get('st') == status:
+    if old and old.get('ranks') is not None and old.get('st') == status:
         it['ranks'] = old['ranks']
-    elif (it['kw'] or comp) and cnt > 1 and '유찰' not in status and it['dt'][:10] >= recent_from and newdetail < MAX_DETAIL:
-        try:
-            r = fetch_all('getOpengResultListInfoOpengCompt',
-                          dict(bidNtceNo=x.get('bidNtceNo'), bidNtceOrd=x.get('bidNtceOrd', '000'),
-                               bidClsfcNo=x.get('bidClsfcNo', '0'), rbidNo=x.get('rbidNo', '0')))
-            it['ranks'] = [[str(y.get('opengRank', '')), y.get('prcbdrNm', ''), y.get('prcbdrBizno', ''),
-                            num(y.get('bidprcAmt')), num(y.get('bidprcrt')), y.get('rmrk', '') or '',
-                            num(y.get('techEvlVal')), num(y.get('bidPrceEvlVal')), num(y.get('totalEvlAmtVal'))]
-                           for y in sorted(r, key=lambda y: int(num(y.get('opengRank')) or 9999))]
-            newdetail += 1
-        except Exception as e:
-            print('개찰순위 실패', k, e)
     if it['ranks'] is None and cnt == 1 and it['top']:   # 단독 참가는 1순위가 곧 참여업체
         t = it['top']
         it['ranks'] = [['1', t['nm'], t['biz'], t['amt'], t['rate'], '', None, None, None]]
@@ -158,22 +146,51 @@ for k, w in win.items():
     if k in fresh or not w['g']:
         continue
     x = winrow[k]
-    fresh[k] = {'k': k, 'no': f"{x.get('bidNtceNo')}-{x.get('bidNtceOrd', '')}", 'nm': x.get('bidNtceNm', ''), 'inst': '',
-                'dmin': x.get('dminsttNm', ''), 'dt': str(x.get('rlOpengDt', ''))[:16], 'cnt': int(num(x.get('prtcptCnum')) or 0),
-                'st': '낙찰', 'top': None, 'win': w, 'ranks': None, 'kw': is_kw(x.get('bidNtceNm', ''))}
+    old = prev.get(k) or {}
+    fresh[k] = {'k': k, 'no': f"{x.get('bidNtceNo')}-{x.get('bidNtceOrd', '')}", 'nm': x.get('bidNtceNm', ''), 'inst': old.get('inst', ''),
+                'dmin': x.get('dminsttNm', ''), 'dt': old.get('dt') or str(x.get('rlOpengDt', ''))[:16], 'cnt': int(num(x.get('prtcptCnum')) or 0),
+                'st': old.get('st') or '낙찰', 'top': old.get('top'), 'win': w, 'ranks': old.get('ranks'), 'kw': is_kw(x.get('bidNtceNm', ''))}
+
+items = dict(prev)
+items.update(fresh)
+
+
+def need_ranks(it):
+    """참여업체 전체 순위가 필요한 건: 조사·연구 키워드 사업이거나 경쟁사가 1순위/낙찰인 건 중 2곳 이상 참가"""
+    comp = (it.get('top') or {}).get('g') or (it.get('win') or {}).get('g')
+    return it.get('ranks') is None and (it.get('kw') or comp) and (it.get('cnt') or 0) > 1 and '유찰' not in (it.get('st') or '')
+
+
+# 개찰순위: 최신 건부터 한 번에 MAX_DETAIL건 (과거분은 여러 번에 나눠 채움, API 하루 한도 고려)
+newdetail, fails = 0, 0
+for it in sorted((i for i in items.values() if need_ranks(i)), key=lambda i: i['dt'], reverse=True):
+    if newdetail >= MAX_DETAIL or fails >= 3:
+        break
+    no, ord_, cls, rb = it['k'].split('-')
+    try:
+        r = fetch_all('getOpengResultListInfoOpengCompt', dict(bidNtceNo=no, bidNtceOrd=ord_, bidClsfcNo=cls, rbidNo=rb))
+        it['ranks'] = [[str(y.get('opengRank', '')), y.get('prcbdrNm', ''), y.get('prcbdrBizno', ''),
+                        num(y.get('bidprcAmt')), num(y.get('bidprcrt')), y.get('rmrk', '') or '',
+                        num(y.get('techEvlVal')), num(y.get('bidPrceEvlVal')), num(y.get('totalEvlAmtVal'))]
+                       for y in sorted(r, key=lambda y: int(num(y.get('opengRank')) or 9999))]
+        newdetail += 1
+        fails = 0
+    except Exception as e:
+        fails += 1
+        print('개찰순위 실패', it['k'], e)
 
 # 참여업체 경쟁사 표시 + 보관 여부
-items = dict(prev)
-for k, it in fresh.items():
-    for r in it['ranks'] or []:
+for it in items.values():
+    for r in it.get('ranks') or []:
         if len(r) < 10:
             r.append(grp(r[1], r[2]))
-    it['g'] = sorted({g for g in [(it['top'] or {}).get('g'), (it['win'] or {}).get('g')] + [r[9] for r in it['ranks'] or []] if g})
-    items[k] = it
-keep = [it for it in items.values() if it.get('g') or (it.get('kw') and it['dt'][:10] >= recent_from)]
+    it['g'] = sorted({g for g in [(it.get('top') or {}).get('g'), (it.get('win') or {}).get('g')] + [r[9] for r in it.get('ranks') or []] if g})
+# 경쟁사 관련 → 계속 보관 / 키워드 사업 → 최근 2주 + 순위 받기 전(대기)까지 보관
+keep = [it for it in items.values() if it['g'] or (it.get('kw') and (it['dt'][:10] >= recent_from or need_ranks(it)))]
 keep.sort(key=lambda x: x['dt'], reverse=True)
+pending = sum(1 for x in keep if need_ranks(x))
 
-json.dump({'generatedAt': now.strftime('%Y-%m-%d %H:%M'), 'recentFrom': recent_from,
+json.dump({'generatedAt': now.strftime('%Y-%m-%d %H:%M'), 'recentFrom': recent_from, 'pendingRanks': pending,
            'source': '나라장터 낙찰정보서비스 (공공데이터포털)', 'items': keep},
           open(OUT, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
-print(f'OK {now:%Y-%m-%d %H:%M} · 보관 {len(keep)}건 (경쟁사 관련 {sum(1 for x in keep if x["g"])}) · 개찰순위 새로 {newdetail}건')
+print(f'OK {now:%Y-%m-%d %H:%M} · 보관 {len(keep)}건 (경쟁사 관련 {sum(1 for x in keep if x["g"])}) · 개찰순위 새로 {newdetail}건 · 순위 대기 {pending}건')
