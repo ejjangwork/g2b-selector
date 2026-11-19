@@ -1,6 +1,11 @@
 name: 경쟁사 개찰·계약 수집
 
 on:
+  # 주 실행: '나라장터 수집'(cron-job.org가 15분마다 깨움)이 끝날 때마다 따라 실행하되, 50분 안에 돌았으면 건너뜀 → 사실상 매시간
+  # GitHub 자체 예약(schedule)은 자주 빠져서 보조로만 둠
+  workflow_run:
+    workflows: ["나라장터 수집"]
+    types: [completed]
   schedule:
     # 한국시간 08~19시 매시 23분 (UTC 23시, 0~10시)
     - cron: '23 23 * * *'
@@ -29,21 +34,35 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+      - name: 최근 수집 확인
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            age=$(python3 -c "import json,datetime as d;g=json.load(open('data/result.json'))['generatedAt'];t=d.datetime.strptime(g,'%Y-%m-%d %H:%M');n=d.datetime.utcnow()+d.timedelta(hours=9);print(int((n-t).total_seconds()//60))")
+            if [ "$age" -lt 50 ]; then
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "마지막 수집이 ${age}분 전이라 이번엔 건너뜀"
+            fi
+          fi
       - uses: actions/setup-python@v5
+        if: steps.gate.outputs.skip != 'true'
         with:
           python-version: '3.12'
       - name: 개찰결과 수집
+        if: steps.gate.outputs.skip != 'true'
         env:
           NARA_API_KEY: ${{ secrets.NARA_API_KEY }}
           RESULT_FROM: ${{ github.event.inputs.result_from }}
         run: python3 scripts/update_result.py data/result.json
       - name: 계약정보 수집
+        if: steps.gate.outputs.skip != 'true'
         continue-on-error: true   # 계약정보서비스 활용신청 전이거나 API 오류여도 개찰결과는 저장
         env:
           NARA_API_KEY: ${{ secrets.NARA_API_KEY }}
           CONTRACT_FROM: ${{ github.event.inputs.contract_from }}
         run: python3 scripts/update_contracts.py data/contracts.json
       - name: 결과 저장
+        if: steps.gate.outputs.skip != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
