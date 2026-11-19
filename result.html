@@ -67,6 +67,9 @@ tr.open td{background:#f5f8ff}
 tr.det>td{background:#fbfcfe;padding:8px 10px 16px 30px}
 tr.us>td{background:var(--us-soft)}
 tr.us>td:first-child{box-shadow:inset 3px 0 0 var(--us)}
+tr.uswin>td{background:#e6eeff}
+tr.uswin>td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
+tr.uswin:hover>td{background:#dbe6ff}
 tr.tot td{font-weight:700;background:#f4f6fa;position:sticky;bottom:0}
 .sub{width:auto;min-width:480px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .sub th{position:static;background:#f4f6fa}
@@ -340,7 +343,7 @@ function oRender(){
     card(done ? (oc('win') / done * 100).toFixed(0) + '%' : '-', `${t} 낙찰률 (낙찰÷결과 확정)`, t === US) +
     card(eokT(gWin.reduce((s,x) => s + (x.win.amt || 0), 0)), `${t} 낙찰금액`, t === US);
   const pend = (RES && RES.pendingRanks) || 0;
-  $('oCov').textContent = pend ? ` 참여·탈락은 참여업체 순위를 받은 건 기준이에요. 과거 조사·연구 사업 ${pend.toLocaleString()}건이 아직 확인 대기 중이라 실제보다 적게 나와요 (매시간 60건씩 채워짐).` : ' 참여·탈락은 조사·연구 키워드 사업과 경쟁사 1순위·낙찰 건의 참여업체 순위 기준이에요.';
+  $('oCov').textContent = pend ? ` 참여·탈락은 참여업체 순위를 받은 건 기준이에요. 과거 조사·연구 사업 ${pend.toLocaleString()}건이 아직 확인 대기 중이라 실제보다 적게 나와요 (매시간 75건씩 채워짐).` : ' 참여·탈락은 조사·연구 키워드 사업과 경쟁사 1순위·낙찰 건의 참여업체 순위 기준이에요.';
   const hits = q ? list.filter(x => oMatch(x, q).corp) : [];
   $('oCohit').classList.toggle('hidden', !hits.length);
   if (hits.length) $('oCohit').innerHTML = `🏢 <b>"${esc(q)}"</b> 참여 개찰 <b>${hits.length}건</b> · 1순위 <b>${hits.filter(x => x.top && nz(x.top.nm).includes(n)).length}건</b> · 최종낙찰 <b>${hits.filter(x => x.win && nz(x.win.nm).includes(n)).length}건</b>`;
@@ -364,7 +367,7 @@ function oRender(){
           `</tbody></table>${info}</td></tr>`;
       } else det = `<tr class="det"><td colspan="7" class="sm">${x.sc === 'fail' ? '유찰된 건이에요.' : '참여업체 전체 순위는 아직 없어요 (최근 2주 건부터 채워져요).'}${info}</td></tr>`;
     }
-    return `<tr class="click ${o ? 'open' : ''} ${isUs ? 'us' : ''}" data-k="${esc(x.k)}">
+    return `<tr class="click ${o ? 'open' : ''} ${x.win && x.win.g === US ? 'uswin' : isUs ? 'us' : ''}" data-k="${esc(x.k)}">
       <td class="nw sm c-x">${esc(x.dt.slice(2))}</td>
       <td class="c-nm"><span class="arrow">▶</span> ${hl(x.nm, oScope === 'kw' ? [...x.core, ...x.res, ...x.bl, ...qq] : qq)}<div class="sm">${hl(x.dmin || x.inst, qq)}</div></td>
       <td class="num c-x">${x.cnt || '-'}</td><td class="c-x">${top}</td><td class="c-x">${win}</td>
@@ -405,7 +408,7 @@ function cRender(){
     card(`${us.length}건 · ${eokT(usAmt)}`, '리서치랩', 1) + card(sum ? (usAmt / sum * 100).toFixed(1) + '%' : '-', '리서치랩 금액 점유율', 1) +
     card(list.filter(r => r.isNew).length + '건', '최근 2주 새로 들어온 계약');
   const show = list.slice(0, cLimit);
-  $('cTb').innerHTML = show.map(r => `<tr class="${r.g === US ? 'us' : ''}"><td class="nw sm c-x">${esc(r.d.replace(/-00$/,''))}</td>
+  $('cTb').innerHTML = show.map(r => `<tr class="${r.g === US ? 'uswin' : ''}"><td class="nw sm c-x">${esc(r.d.replace(/-00$/,''))}</td>
     <td class="c-nm">${r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener" style="color:inherit">${hl(r.nm, qq)}</a>` : hl(r.nm, qq)}${r.isNew ? '<span class="new">NEW</span>' : ''}<div class="sm">${hl(r.cl, qq)}${r.kind ? ' · ' + esc(r.kind) : ''}</div></td>
     <td class="c-st">${tagG(r.g)}</td><td class="num c-x">${won(r.amt)}</td>
     <td class="c-m">${esc(r.d.replace(/-00$/,''))} · ${won(r.amt)}원</td></tr>`).join('') || `<tr><td colspan="4" class="sm" style="text-align:center;padding:24px">조건에 맞는 계약이 없어요.</td></tr>`;

@@ -19,7 +19,7 @@ from common import nz
 KEY = os.environ['NARA_API_KEY'].strip()
 OUT = sys.argv[1]
 RECENT_DAYS = int(os.environ.get('RESULT_DAYS', '14'))
-MAX_DETAIL = int(os.environ.get('RESULT_MAX_DETAIL', '60'))   # 하루 12번 × 60 = 720건 (개발계정 하루 한도 1,000건 안쪽)
+MAX_DETAIL = int(os.environ.get('RESULT_MAX_DETAIL', '75'))   # 하루 약 13번 × 75 = 975건 (개발계정 하루 한도 1,000건 안쪽)
 KST = timezone(timedelta(hours=9))
 now = datetime.now(KST)
 start = datetime.strptime(os.environ['RESULT_FROM'], '%Y%m%d').replace(tzinfo=KST) if os.environ.get('RESULT_FROM') \
@@ -161,9 +161,11 @@ def need_ranks(it):
     return it.get('ranks') is None and (it.get('kw') or comp) and (it.get('cnt') or 0) > 1 and '유찰' not in (it.get('st') or '')
 
 
-# 개찰순위: 최신 건부터 한 번에 MAX_DETAIL건 (과거분은 여러 번에 나눠 채움, API 하루 한도 고려)
+# 개찰순위: 조사 성격이 강한 사업(추천 키워드) → 나머지 순, 각각 최신 건부터 한 번에 MAX_DETAIL건
+# (과거분은 여러 번에 나눠 채움, API 하루 한도 고려)
+is_core = lambda nm: any(w in nm for w in kw['core'])
 newdetail, fails = 0, 0
-for it in sorted((i for i in items.values() if need_ranks(i)), key=lambda i: i['dt'], reverse=True):
+for it in sorted((i for i in items.values() if need_ranks(i)), key=lambda i: (is_core(i['nm']), i['dt']), reverse=True):
     if newdetail >= MAX_DETAIL or fails >= 3:
         break
     no, ord_, cls, rb = it['k'].split('-')
