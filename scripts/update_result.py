@@ -103,9 +103,11 @@ def corp(s):
 
 
 # ---- 이전 결과 ----
-prev = {}
+prev, nocomp = {}, set()
 try:
-    prev = {x['k']: x for x in json.load(open(OUT, encoding='utf-8'))['items']}
+    _p = json.load(open(OUT, encoding='utf-8'))
+    prev = {x['k']: x for x in _p['items']}
+    nocomp = set(_p.get('noComp', []))   # 순위를 이미 확인했는데 경쟁사가 없던 건 (다시 받지 않으려고 키만 기억)
 except Exception:
     pass
 
@@ -139,6 +141,8 @@ for x in sorted(rows, key=real, reverse=True):
     old = prev.get(k)
     if old and old.get('ranks') is not None and old.get('st') == status:
         it['ranks'] = old['ranks']
+    if it['ranks'] is None and k in nocomp:
+        it['ranks'] = []          # 이미 확인한 건 → 다시 받지 않음
     if it['ranks'] is None and cnt == 1 and it['top']:   # 단독 참가는 1순위가 곧 참여업체
         t = it['top']
         it['ranks'] = [['1', t['nm'], t['biz'], t['amt'], t['rate'], '', None, None, None]]
@@ -193,9 +197,11 @@ for it in items.values():
 # 경쟁사 관련 → 계속 보관 / 키워드 사업 → 최근 2주 + 순위 받기 전(대기)까지 보관
 keep = [it for it in items.values() if it['g'] or (it.get('kw') and (it['dt'][:10] >= recent_from or need_ranks(it)))]
 keep.sort(key=lambda x: x['dt'], reverse=True)
+kept = {x['k'] for x in keep}
+nocomp |= {it['k'] for it in items.values() if it['k'] not in kept and it.get('ranks') is not None}
 pending = sum(1 for x in keep if need_ranks(x))
 
 json.dump({'generatedAt': now.strftime('%Y-%m-%d %H:%M'), 'recentFrom': recent_from, 'pendingRanks': pending,
-           'source': '나라장터 낙찰정보서비스 (공공데이터포털)', 'items': keep},
+           'source': '나라장터 낙찰정보서비스 (공공데이터포털)', 'items': keep, 'noComp': sorted(nocomp)},
           open(OUT, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
 print(f'OK {now:%Y-%m-%d %H:%M} · 보관 {len(keep)}건 (경쟁사 관련 {sum(1 for x in keep if x["g"])}) · 개찰순위 새로 {newdetail}건 · 순위 대기 {pending}건')
