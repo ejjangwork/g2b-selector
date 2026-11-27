@@ -269,7 +269,7 @@ function prepCntr(){
     api: r[6] === 'a', url: r[10] || '', kind: r[8] || '', isNew: r[6] === 'a' && r[0] >= recent}));
 }
 function showSrcs(){
-  const a = RES ? `<span>⚡ 개찰결과 <b>${esc(RES.generatedAt)}</b> 기준 · 평일 낮 매시 갱신</span>` : '<span>개찰결과 데이터 없음</span>';
+  const a = RES ? `<span>⚡ 개찰결과 <b>${esc(RES.generatedAt)}</b> 기준 · 15분마다 갱신</span>` : '<span>개찰결과 데이터 없음</span>';
   const td = kstDay(), last = (CR.find(r => r.d <= td) || {d: '-'}).d;
   const b = CNT ? `<span>📄 계약정보 <b>${esc(CNT.generatedAt)}</b> 기준 · 최근 계약일 ${esc(last)} · 2020년~ 누적 ${CR.length.toLocaleString()}건</span>` : '<span>계약 데이터 없음</span>';
   $('srcs').innerHTML = a + b;
@@ -343,7 +343,7 @@ function oRender(){
     card(done ? (oc('win') / done * 100).toFixed(0) + '%' : '-', `${t} 낙찰률 (낙찰÷결과 확정)`, t === US) +
     card(eokT(gWin.reduce((s,x) => s + (x.win.amt || 0), 0)), `${t} 낙찰금액`, t === US);
   const pend = (RES && RES.pendingRanks) || 0;
-  $('oCov').textContent = pend ? ` 참여·탈락은 참여업체 순위를 받은 건 기준이에요. 과거 조사·연구 사업 ${pend.toLocaleString()}건이 아직 확인 대기 중이라 실제보다 적게 나와요 (매시간 75건씩 채워짐).` : ' 참여·탈락은 조사·연구 키워드 사업과 경쟁사 1순위·낙찰 건의 참여업체 순위 기준이에요.';
+  $('oCov').textContent = pend ? ` 참여·탈락은 참여업체 순위를 받은 건 기준이에요. 과거 조사·연구 사업 ${pend.toLocaleString()}건이 아직 확인 대기 중이라 실제보다 적게 나와요 (15분마다 20건씩 채워짐).` : ' 참여·탈락은 조사·연구 키워드 사업과 경쟁사 1순위·낙찰 건의 참여업체 순위 기준이에요.';
   const hits = q ? list.filter(x => oMatch(x, q).corp) : [];
   $('oCohit').classList.toggle('hidden', !hits.length);
   if (hits.length) $('oCohit').innerHTML = `🏢 <b>"${esc(q)}"</b> 참여 개찰 <b>${hits.length}건</b> · 1순위 <b>${hits.filter(x => x.top && nz(x.top.nm).includes(n)).length}건</b> · 최종낙찰 <b>${hits.filter(x => x.win && nz(x.win.nm).includes(n)).length}건</b>`;

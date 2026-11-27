@@ -1,7 +1,7 @@
 name: 경쟁사 개찰·계약 수집
 
 on:
-  # 주 실행: '나라장터 수집'(cron-job.org가 15분마다 깨움)이 끝날 때마다 따라 실행하되, 50분 안에 돌았으면 건너뜀 → 사실상 매시간
+  # 주 실행: '나라장터 수집'(cron-job.org가 15분마다 깨움)이 끝날 때마다 따라 실행 → 개찰결과 15분마다, 계약정보 1시간마다
   # GitHub 자체 예약(schedule)은 자주 빠져서 보조로만 둠
   workflow_run:
     workflows: ["나라장터 수집"]
@@ -37,12 +37,12 @@ jobs:
       - name: 최근 수집 확인
         id: gate
         run: |
+          # 개찰결과는 15분마다(10분 안에 돌았으면 건너뜀), 계약정보는 API 하루 한도 때문에 1시간마다
+          age() { python3 -c "import json,datetime as d,sys;g=json.load(open(sys.argv[1]))['generatedAt'][:16];t=d.datetime.strptime(g,'%Y-%m-%d %H:%M');n=d.datetime.utcnow()+d.timedelta(hours=9);print(int((n-t).total_seconds()//60))" "$1" 2>/dev/null || echo 9999; }
           if [ "${{ github.event_name }}" = "workflow_run" ]; then
-            age=$(python3 -c "import json,datetime as d;g=json.load(open('data/result.json'))['generatedAt'];t=d.datetime.strptime(g,'%Y-%m-%d %H:%M');n=d.datetime.utcnow()+d.timedelta(hours=9);print(int((n-t).total_seconds()//60))")
-            if [ "$age" -lt 50 ]; then
-              echo "skip=true" >> "$GITHUB_OUTPUT"
-              echo "마지막 수집이 ${age}분 전이라 이번엔 건너뜀"
-            fi
+            ra=$(age data/result.json); ca=$(age data/contracts.json)
+            if [ "$ra" -lt 10 ]; then echo "skip=true" >> "$GITHUB_OUTPUT"; echo "개찰결과 ${ra}분 전 수집 → 건너뜀"; fi
+            if [ "$ca" -lt 55 ]; then echo "skipc=true" >> "$GITHUB_OUTPUT"; echo "계약정보 ${ca}분 전 수집 → 이번엔 개찰결과만"; fi
           fi
       - uses: actions/setup-python@v5
         if: steps.gate.outputs.skip != 'true'
@@ -55,7 +55,7 @@ jobs:
           RESULT_FROM: ${{ github.event.inputs.result_from }}
         run: python3 scripts/update_result.py data/result.json
       - name: 계약정보 수집
-        if: steps.gate.outputs.skip != 'true'
+        if: steps.gate.outputs.skip != 'true' && steps.gate.outputs.skipc != 'true'
         continue-on-error: true   # 계약정보서비스 활용신청 전이거나 API 오류여도 개찰결과는 저장
         env:
           NARA_API_KEY: ${{ secrets.NARA_API_KEY }}

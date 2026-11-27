@@ -19,7 +19,7 @@ from common import nz
 KEY = os.environ['NARA_API_KEY'].strip()
 OUT = sys.argv[1]
 RECENT_DAYS = int(os.environ.get('RESULT_DAYS', '14'))
-MAX_DETAIL = int(os.environ.get('RESULT_MAX_DETAIL', '75'))   # 하루 약 13번 × 75 = 975건 (개발계정 하루 한도 1,000건 안쪽)
+MAX_DETAIL = int(os.environ.get('RESULT_MAX_DETAIL', '20'))   # 15분마다 하루 약 48번 × 20 = 960건 (개발계정 하루 한도 1,000건 안쪽)
 KST = timezone(timedelta(hours=9))
 now = datetime.now(KST)
 start = datetime.strptime(os.environ['RESULT_FROM'], '%Y%m%d').replace(tzinfo=KST) if os.environ.get('RESULT_FROM') \
