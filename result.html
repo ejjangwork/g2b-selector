@@ -149,7 +149,7 @@ h4{margin:0 0 6px;font-size:13.5px}
       <p class="hint">줄을 누르면 전체 개찰순위가 펼쳐져요 (협상계약은 기술·가격 점수 포함). 개찰 1순위는 협상 결과에 따라 최종 낙찰자와 다를 수 있어요. <span id="oCov"></span></p>
       <div class="tablebox">
         <table class="rt">
-          <thead><tr><th>개찰일시</th><th>사업명 · 발주처</th><th class="num">참가</th><th>개찰 1순위</th><th>최종낙찰</th><th>상태</th><th>참여 경쟁사</th></tr></thead>
+          <thead><tr><th>개찰일시 (실제)</th><th>사업명 · 발주처</th><th class="num">참가</th><th>개찰 1순위</th><th>최종낙찰</th><th>상태</th><th>참여 경쟁사</th></tr></thead>
           <tbody id="oTb"></tbody>
         </table>
       </div>
@@ -368,7 +368,7 @@ function oRender(){
       } else det = `<tr class="det"><td colspan="7" class="sm">${x.sc === 'fail' ? '유찰된 건이에요.' : '참여업체 전체 순위는 아직 없어요 (최근 2주 건부터 채워져요).'}${info}</td></tr>`;
     }
     return `<tr class="click ${o ? 'open' : ''} ${x.win && x.win.g === US ? 'uswin' : isUs ? 'us' : ''}" data-k="${esc(x.k)}">
-      <td class="nw sm c-x">${esc(x.dt.slice(2))}</td>
+      <td class="nw sm c-x">${esc(x.dt.slice(2))}${x.sdt && x.sdt.slice(0,10) !== x.dt.slice(0,10) ? `<div style="font-size:11px">예정 ${esc(x.sdt.slice(5,10))}</div>` : ""}</td>
       <td class="c-nm"><span class="arrow">▶</span> ${hl(x.nm, oScope === 'kw' ? [...x.core, ...x.res, ...x.bl, ...qq] : qq)}<div class="sm">${hl(x.dmin || x.inst, qq)}</div></td>
       <td class="num c-x">${x.cnt || '-'}</td><td class="c-x">${top}</td><td class="c-x">${win}</td>
       <td class="c-st"><span class="st st-${x.sc}">${esc(x.st || '-')}</span>${(() => { const tt = $('oCorp').value || US, o = outcome(x, tt); return o === 'lose' ? `<div><span class="st st-fail" style="margin-top:3px">${esc(tt)} 탈락</span></div>` : o === 'win' ? `<div><span class="st st-win" style="margin-top:3px">${esc(tt)} 낙찰</span></div>` : ''; })()}</td><td class="c-x">${gs}</td><td class="c-m">${mob}</td></tr>${det}`;

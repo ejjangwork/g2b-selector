@@ -109,7 +109,9 @@ try:
 except Exception:
     pass
 
-rows = fetch_range('getOpengResultListInfoServc')
+# 입력일시(inptDt) 기준: 나라장터 '실제개찰일시'와 같은 값. 협상계약은 예정 개찰일(opengDt)보다 몇 주 늦게 결과가 올라와서,
+# 예정일 기준으로 받으면 늦게 올라온 결과를 놓치거나 아래쪽에 묻힘
+rows = fetch_range('getOpengResultListInfoServc', 1)
 
 win, winrow = {}, {}
 try:
@@ -123,7 +125,8 @@ except Exception as e:
     print('낙찰자 목록 실패(건너뜀):', e)
 
 fresh = {}
-for x in sorted(rows, key=lambda x: x.get('opengDt', ''), reverse=True):
+real = lambda x: str(x.get('inptDt') or x.get('opengDt') or '')[:16]
+for x in sorted(rows, key=real, reverse=True):
     k = key(x)
     if k in fresh:
         continue
@@ -131,7 +134,7 @@ for x in sorted(rows, key=lambda x: x.get('opengDt', ''), reverse=True):
     cnt = int(num(x.get('prtcptCnum')) or 0)
     nm = x.get('bidNtceNm', '')
     it = {'k': k, 'no': f"{x.get('bidNtceNo')}-{x.get('bidNtceOrd', '')}", 'nm': nm,
-          'inst': x.get('ntceInsttNm', ''), 'dmin': x.get('dminsttNm', ''), 'dt': str(x.get('opengDt', ''))[:16],
+          'inst': x.get('ntceInsttNm', ''), 'dmin': x.get('dminsttNm', ''), 'dt': real(x), 'sdt': str(x.get('opengDt', ''))[:16],
           'cnt': cnt, 'st': status, 'top': corp(x.get('opengCorpInfo')), 'win': win.get(k), 'ranks': None, 'kw': is_kw(nm)}
     old = prev.get(k)
     if old and old.get('ranks') is not None and old.get('st') == status:
